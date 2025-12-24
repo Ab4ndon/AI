@@ -131,5 +131,6 @@ View your app in AI Studio: https://ai.studio/apps/drive/17SBNHprxzizMO8eSZUt_UQ
 - **404 index.css**：静态文件引用问题，已修复
 - **apiKey is not defined**：代码版本未更新，请强制重新部署
 - **Mixed Content**：HTTPS混合内容问题，已修复为自动转换HTTP到HTTPS
+- **音频重叠播放**：题目切换时上一题音频仍在播放，已修复所有切换逻辑
 
 EdgeOne部署完成后，应用将获得更好的性能和稳定性！

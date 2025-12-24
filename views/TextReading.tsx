@@ -63,6 +63,7 @@ const analyzeKeyWords = async (storySegments: typeof STORY_DATA): Promise<string
   return ['ugly', 'beautiful', 'happy', 'sad', 'tall', 'small', 'big', 'little', 'run', 'walk', 'see', 'look', 'say', 'tell', 'go'];
 };
 import { speakText, stopSpeaking } from '../services/ttsService';
+import FeedbackAnimation from '../components/FeedbackAnimation';
 import { evaluateSpeech } from '../services/speechEvaluationService';
 import { ArrowLeft, Volume2, Sparkles } from 'lucide-react';
 
@@ -87,6 +88,12 @@ const TextReading: React.FC<Props> = ({ onBack, onComplete }) => {
   const [showCompletionOptions, setShowCompletionOptions] = useState(false);
   const [showNextButton, setShowNextButton] = useState(false); // 控制下一题按钮显示
   const [keyWords, setKeyWords] = useState<string[]>([]); // AI分析的重点词汇
+
+  // Feedback Animation
+  const [feedbackAnimation, setFeedbackAnimation] = useState<{
+    type: 'thumbsUp' | 'keepTrying';
+    show: boolean;
+  } | null>(null);
 
   // 用户交互检测
   const handleUserInteraction = () => {
@@ -371,14 +378,14 @@ const TextReading: React.FC<Props> = ({ onBack, onComplete }) => {
         setFeedbackMessage(aiFeedback.message);
         setLastScore(aiFeedback.score);
 
-        setTimeout(async () => {
+        setTimeout(() => {
           const score = aiFeedback.score;
           if (score >= 80) {
-            await speakText('真棒', 'zh-CN');
+            setFeedbackAnimation({ type: 'thumbsUp', show: true });
           } else if (score < 60) {
-            await speakText('继续加油呀', 'zh-CN');
+            setFeedbackAnimation({ type: 'keepTrying', show: true });
           }
-          // 60-79分不播放语音反馈
+          // 60-79分不显示动画反馈
         }, 500);
 
         setTimeout(() => {
@@ -412,15 +419,15 @@ const TextReading: React.FC<Props> = ({ onBack, onComplete }) => {
         setLastScore(aiFeedback.score);
         setSuggestions(aiFeedback.suggestions);
 
-        // AI反馈生成后播放语音
-        setTimeout(async () => {
+        // AI反馈生成后显示动画
+        setTimeout(() => {
           const score = aiFeedback.score;
           if (score >= 80) {
-            await speakText('真棒', 'zh-CN');
+            setFeedbackAnimation({ type: 'thumbsUp', show: true });
           } else if (score < 60) {
-            await speakText('继续加油呀', 'zh-CN');
+            setFeedbackAnimation({ type: 'keepTrying', show: true });
           }
-          // 60-79分不播放语音反馈
+          // 60-79分不显示动画反馈
 
           // 错词重练
           setTimeout(async () => {
@@ -731,6 +738,14 @@ const TextReading: React.FC<Props> = ({ onBack, onComplete }) => {
 
   return (
     <div className="h-full flex flex-col gradient-bg-text">
+      {/* Feedback Animation */}
+      {feedbackAnimation?.show && (
+        <FeedbackAnimation
+          type={feedbackAnimation.type}
+          onComplete={() => setFeedbackAnimation(null)}
+        />
+      )}
+
       {/* 庆祝动画 */}
       <StarEffect show={showCelebration} />
 

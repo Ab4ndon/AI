@@ -6,6 +6,7 @@ import SpeechBubble from '../components/SpeechBubble';
 import AudioButton from '../components/AudioButton';
 import AudioPlayback from '../components/AudioPlayback';
 import StarEffect from '../components/StarEffect';
+import FeedbackAnimation from '../components/FeedbackAnimation';
 import { generateDetailedFeedback } from '../services/qwenService';
 import { speakText, stopSpeaking } from '../services/ttsService';
 import { playSoundEffect } from '../services/soundEffectService';
@@ -131,6 +132,12 @@ const WordConsolidation: React.FC<Props> = ({ onBack, onComplete }) => {
   const [selectedQuizId, setSelectedQuizId] = useState<string | null>(null);
   const [showStarEffect, setShowStarEffect] = useState(false);
 
+  // Feedback Animation
+  const [feedbackAnimation, setFeedbackAnimation] = useState<{
+    type: 'thumbsUp' | 'keepTrying';
+    show: boolean;
+  } | null>(null);
+
   // 监听状态变化，停止音频播放
   useEffect(() => {
     stopSpeaking();
@@ -183,19 +190,15 @@ const WordConsolidation: React.FC<Props> = ({ onBack, onComplete }) => {
         setTeacherMsg("太棒了！准备进入下一题...");
         setShowNextButton(true);
 
-        // 根据分数播放简短的语音反馈
-        setTimeout(async () => {
-          try {
-            const score = detailedFeedback.score;
-            if (score >= 80) {
-              await speakText('真棒', 'zh-CN');
-            } else if (score < 60) {
-              await speakText('继续加油呀', 'zh-CN');
-            }
-            // 60-79分不播放语音反馈
-          } catch (error) {
-            console.error('语音反馈播放失败:', error);
+        // 根据分数显示动画反馈
+        setTimeout(() => {
+          const score = detailedFeedback.score;
+          if (score >= 80) {
+            setFeedbackAnimation({ type: 'thumbsUp', show: true });
+          } else if (score < 60) {
+            setFeedbackAnimation({ type: 'keepTrying', show: true });
           }
+          // 60-79分不显示动画反馈
         }, 1000);
       } else {
         // Error handling flow
@@ -209,29 +212,25 @@ const WordConsolidation: React.FC<Props> = ({ onBack, onComplete }) => {
           setShowSkipButton(true);
         }
 
-        // 根据分数播放简短的语音反馈
-        setTimeout(async () => {
-          try {
-            const score = detailedFeedback.score;
-            if (score >= 80) {
-              await speakText('真棒', 'zh-CN');
-            } else if (score < 60) {
-              await speakText('继续加油呀', 'zh-CN');
-            }
-            // 60-79分不播放语音反馈
+        // 根据分数显示动画反馈
+        setTimeout(() => {
+          const score = detailedFeedback.score;
+          if (score >= 80) {
+            setFeedbackAnimation({ type: 'thumbsUp', show: true });
+          } else if (score < 60) {
+            setFeedbackAnimation({ type: 'keepTrying', show: true });
+          }
+          // 60-79分不显示动画反馈
 
-            // 如果AI判断需要播放语音指导（每3次失败），播放跟读指导
-            if (detailedFeedback.shouldPlayGuidance) {
-              setTimeout(async () => {
-                try {
-                  await speakText(`加油哦${USER_NAME}，跟我读${currentWord.word}`, 'zh-CN');
-                } catch (error) {
-                  console.error('语音指导播放失败:', error);
-                }
-              }, 1500); // 在简短反馈后播放语音指导
-            }
-          } catch (error) {
-            console.error('语音反馈播放失败:', error);
+          // 如果AI判断需要播放语音指导（每3次失败），播放跟读指导
+          if (detailedFeedback.shouldPlayGuidance) {
+            setTimeout(async () => {
+              try {
+                await speakText(`加油哦${USER_NAME}，跟我读${currentWord.word}`, 'zh-CN');
+              } catch (error) {
+                console.error('语音指导播放失败:', error);
+              }
+            }, 2000); // 在动画显示后播放语音指导
           }
         }, 500);
       }
@@ -605,6 +604,14 @@ const WordConsolidation: React.FC<Props> = ({ onBack, onComplete }) => {
 
   return (
     <div className="h-full flex flex-col gradient-bg-words">
+      {/* Feedback Animation */}
+      {feedbackAnimation?.show && (
+        <FeedbackAnimation
+          type={feedbackAnimation.type}
+          onComplete={() => setFeedbackAnimation(null)}
+        />
+      )}
+
       {/* 星星特效 */}
       <StarEffect show={showStarEffect} />
 

@@ -509,7 +509,7 @@ const WordConsolidation: React.FC<Props> = ({ onBack, onComplete }) => {
           isProcessing={isProcessing}
           label="按住朗读"
           expectedText={word.word}
-          isWord={true}
+          isWord={false} // 改为false以获得更长的等待时间，确保录音完整性
           showFeedback={true}
         />
 
@@ -718,7 +718,7 @@ const WordConsolidation: React.FC<Props> = ({ onBack, onComplete }) => {
             isProcessing={isProcessing}
             label="按住跟读"
             expectedText={currentPracticeWord}
-            isWord={true}
+            isWord={false} // 改为false以获得更长的等待时间，确保录音完整性
             showFeedback={true}
           />
         </div>

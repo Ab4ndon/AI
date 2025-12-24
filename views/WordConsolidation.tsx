@@ -131,6 +131,11 @@ const WordConsolidation: React.FC<Props> = ({ onBack, onComplete }) => {
   const [selectedQuizId, setSelectedQuizId] = useState<string | null>(null);
   const [showStarEffect, setShowStarEffect] = useState(false);
 
+  // 监听状态变化，停止音频播放
+  useEffect(() => {
+    stopSpeaking();
+  }, [currentIndex, phase]);
+
   // Phase 1: Intro List
   const startReading = () => {
     setPhase(Phase.READING);
@@ -228,7 +233,7 @@ const WordConsolidation: React.FC<Props> = ({ onBack, onComplete }) => {
   // Skip functionality
   // 处理下一题
   const handleNextWord = () => {
-    // 停止当前正在播放的音频
+    // 立即停止所有音频播放
     stopSpeaking();
 
     const currentWord = WORDS_DATA[currentIndex];
@@ -479,7 +484,10 @@ const WordConsolidation: React.FC<Props> = ({ onBack, onComplete }) => {
         )}
 
         <AudioButton
-          onRecordStart={() => {}}
+          onRecordStart={() => {
+            // 用户开始录音时，停止所有正在播放的AI语音
+            stopSpeaking();
+          }}
           onRecordEnd={handleRecordEnd}
           isProcessing={isProcessing}
           label="按住朗读"

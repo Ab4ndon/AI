@@ -658,7 +658,10 @@ const TextReading: React.FC<Props> = ({ onBack, onComplete }) => {
         )}
 
         <AudioButton
-          onRecordStart={() => {}}
+          onRecordStart={() => {
+            // 用户开始录音时，停止所有正在播放的AI语音
+            stopSpeaking();
+          }}
           onRecordEnd={handleReadSegment}
           isProcessing={isProcessing}
           label="按住朗读"

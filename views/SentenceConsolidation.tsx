@@ -114,6 +114,11 @@ const SentenceConsolidation: React.FC<Props> = ({ onBack, onComplete }) => {
   // Game state
   const [gameResult, setGameResult] = useState<'correct' | 'wrong' | null>(null);
 
+  // 监听状态变化，停止音频播放
+  useEffect(() => {
+    stopSpeaking();
+  }, [currentIdx, step]);
+
   // Skip functionality
   const [retryCount, setRetryCount] = useState(0);
   const [showSkipButton, setShowSkipButton] = useState(false);
@@ -309,7 +314,10 @@ const SentenceConsolidation: React.FC<Props> = ({ onBack, onComplete }) => {
         )}
 
         <AudioButton
-          onRecordStart={() => {}}
+          onRecordStart={() => {
+            // 用户开始录音时，停止所有正在播放的AI语音
+            stopSpeaking();
+          }}
           onRecordEnd={handleReadComplete}
           isProcessing={isProcessing}
           label="按住朗读"

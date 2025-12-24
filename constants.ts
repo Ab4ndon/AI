@@ -31,9 +31,9 @@ export const SENTENCES_DATA: SentenceItem[] = [
 ];
 
 export const GRAMMAR_CARDS = [
-  { title: "法宝一", content: "He's/ I'm (not)...", desc: "说样子/心情" },
-  { title: "法宝二", content: "Are you...?", sub: "Yes, I am.", desc: "问对方" },
-  { title: "法宝三", content: "Is he/she...?", sub: "Yes/No...", desc: "问别人" },
+  { title: "", content: "He's/ I'm (not)...", desc: "说样子/心情" },
+  { title: "", content: "Are you...?", sub: "Yes, I am.", desc: "问对方" },
+  { title: "", content: "Is he/she...?", sub: "Yes/No...", desc: "问别人" },
 ];
 
 export const QUIZ_DATA: QuizItem[] = [

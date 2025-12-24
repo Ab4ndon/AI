@@ -153,8 +153,8 @@ const SentenceConsolidation: React.FC<Props> = ({ onBack, onComplete }) => {
       setLastScore(0);
       setTeacherMsg("太棒了！下一个句子！");
     } else {
-      // 句子朗读完成，进入练习阶段
-      startPractice();
+      // 句子朗读完成，显示总结页面
+      startPractice(); // 这里会显示总结页面
     }
   };
 
@@ -207,8 +207,23 @@ const SentenceConsolidation: React.FC<Props> = ({ onBack, onComplete }) => {
   };
 
   const handleGoToGame = () => {
+    // 检查是否全部句子都读对了
+    const wrongSentences = sentenceResults.filter(item => item.score < 80);
+    if (wrongSentences.length > 0) {
+      // 如果还有句子没读对，不允许进入游戏
+      setTimeout(async () => {
+        try {
+          await speakText("还有一些句子需要练习哦，我们先把它们练好吧！", 'zh-CN');
+        } catch (error) {
+          console.error('AI语音提示失败:', error);
+        }
+      }, 500);
+      return;
+    }
+
+    // 全部读对才能进入游戏
     setShowSummary(false);
-    setStep(3); // 直接进入游戏阶段
+    setStep(3); // 进入游戏阶段
 
     // AI语音提示
     setTimeout(async () => {

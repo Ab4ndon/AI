@@ -773,8 +773,9 @@ const WordConsolidation: React.FC<Props> = ({ onBack, onComplete }) => {
     };
 
     const handleNextChallenge = () => {
-      // 调用父组件的onComplete，进入下一关
-      onComplete(mistakes);
+      // 进入看图选词游戏阶段
+      setPhase(Phase.QUIZ);
+      setTeacherMsg("太棒了！现在让我们来玩看图选词游戏吧！");
     };
 
     return (

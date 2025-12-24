@@ -29,6 +29,9 @@ const VOICE_CONFIG = {
 
 // 使用 DashScope API 进行高质量语音合成
 export const speakText = async (text: string, lang: string = 'zh-CN', userInitiated: boolean = false): Promise<void> => {
+  // 在开始新的语音播放之前，先停止当前的所有音频播放
+  stopSpeaking();
+
   console.log('speakText called with:', { text, lang, hasApiKey: !!DASHSCOPE_API_KEY });
 
   if (!DASHSCOPE_API_KEY) {
@@ -185,14 +188,30 @@ const fallbackToWebSpeech = (text: string, lang: string): void => {
 
 // 停止当前播放的语音
 export const stopSpeaking = (): void => {
+  // 停止Web Speech API语音合成
   if ('speechSynthesis' in window) {
     window.speechSynthesis.cancel();
   }
+
   // 停止任何正在播放的音频元素
   const audioElements = document.querySelectorAll('audio');
   audioElements.forEach(audio => {
     audio.pause();
     audio.currentTime = 0;
   });
+
+  // 停止所有Web Audio上下文（如果有的话）
+  try {
+    if (window.AudioContext || (window as any).webkitAudioContext) {
+      // 注意：这里我们无法直接停止所有的AudioContext实例，
+      // 但可以尝试暂停所有媒体元素
+      const mediaElements = document.querySelectorAll('video, audio');
+      mediaElements.forEach(element => {
+        (element as HTMLMediaElement).pause();
+      });
+    }
+  } catch (error) {
+    // 忽略Web Audio API相关的错误
+  }
 };
 

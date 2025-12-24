@@ -6,7 +6,6 @@ import SpeechBubble from '../components/SpeechBubble';
 import AudioButton from '../components/AudioButton';
 import AudioPlayback from '../components/AudioPlayback';
 import StarEffect from '../components/StarEffect';
-import FeedbackAnimation from '../components/FeedbackAnimation';
 import { generateDetailedFeedback } from '../services/qwenService';
 import { speakText, stopSpeaking } from '../services/ttsService';
 import { playSoundEffect } from '../services/soundEffectService';
@@ -133,11 +132,6 @@ const WordConsolidation: React.FC<Props> = ({ onBack, onComplete }) => {
   const [selectedQuizId, setSelectedQuizId] = useState<string | null>(null);
   const [showStarEffect, setShowStarEffect] = useState(false);
 
-  // Feedback Animation
-  const [feedbackAnimation, setFeedbackAnimation] = useState<{
-    type: 'thumbsUp' | 'keepTrying';
-    show: boolean;
-  } | null>(null);
 
   // 监听状态变化，停止音频播放
   useEffect(() => {
@@ -195,14 +189,7 @@ const WordConsolidation: React.FC<Props> = ({ onBack, onComplete }) => {
       setTeacherMsg("朗读完成！准备进入下一题...");
       setShowNextButton(true);
 
-      // 根据分数显示动画反馈
-      const score = detailedFeedback.score;
-      if (score >= 80) {
-        setFeedbackAnimation({ type: 'thumbsUp', show: true });
-      } else if (score < 60) {
-        setFeedbackAnimation({ type: 'keepTrying', show: true });
-      }
-      // 60-79分不显示动画反馈
+      // 分数反馈现在通过AI语音提供
 
       // 如果AI判断需要播放语音指导（每3次失败），播放跟读指导
       if (detailedFeedback.shouldPlayGuidance) {
@@ -240,6 +227,15 @@ const WordConsolidation: React.FC<Props> = ({ onBack, onComplete }) => {
       // Done reading, go to summary
       setPhase(Phase.SUMMARY);
       setTeacherMsg("太棒了！所有单词都读完了！让我们来看看你的表现吧！");
+
+      // AI语音朗读总结
+      setTimeout(async () => {
+        try {
+          await speakText("真棒，所有单词都朗读结束了，让我们来看一下你的表现吧", 'zh-CN');
+        } catch (error) {
+          console.error('AI总结语音播放失败:', error);
+        }
+      }, 500);
     }
   };
 
@@ -620,7 +616,7 @@ const WordConsolidation: React.FC<Props> = ({ onBack, onComplete }) => {
             onClick={handleNextChallenge}
             className="flex-1 bg-gradient-to-r from-purple-500 to-pink-500 text-white py-3 px-6 rounded-2xl font-bold shadow-lg hover:shadow-xl transition-all active:scale-95"
           >
-            挑战下一关
+            看图选词
           </button>
         </div>
       </div>
@@ -687,14 +683,6 @@ const WordConsolidation: React.FC<Props> = ({ onBack, onComplete }) => {
 
   return (
     <div className="h-full flex flex-col gradient-bg-words">
-      {/* Feedback Animation */}
-      {feedbackAnimation?.show && (
-        <FeedbackAnimation
-          type={feedbackAnimation.type}
-          onComplete={() => setFeedbackAnimation(null)}
-        />
-      )}
-
       {/* 星星特效 */}
       <StarEffect show={showStarEffect} />
 

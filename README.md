@@ -103,19 +103,24 @@ View your app in AI Studio: https://ai.studio/apps/drive/17SBNHprxzizMO8eSZUt_UQ
 
 如果部署后语音功能仍然不工作：
 
-1. **检查环境变量**：
+1. **强制重新部署**：
+   - 在EdgeOne控制台点击"重新部署"按钮
+   - 等待几分钟让部署完成
+   - 清除浏览器缓存后重新访问
+
+2. **检查环境变量**：
    - 确保在EdgeOne控制台设置了 `DASHSCOPE_API_KEY`（注意：没有VITE_前缀）
    - `VITE_DASHSCOPE_API_KEY` 用于前端构建时的环境检测
 
-2. **检查函数部署**：
+3. **检查函数部署**：
    - 确认函数文件在 `functions/dashscope-tts/index.js`
    - 检查EdgeOne控制台的函数运行状态
 
-3. **查看函数日志**：
+4. **查看函数日志**：
    - 在EdgeOne控制台查看边缘函数的运行日志
    - 确认函数能正确读取环境变量
 
-4. **网络连接测试**：
+5. **网络连接测试**：
    - 确认EdgeOne能够访问DashScope API
    - 检查是否有防火墙或网络限制
 
@@ -124,5 +129,7 @@ View your app in AI Studio: https://ai.studio/apps/drive/17SBNHprxzizMO8eSZUt_UQ
 - **405 Method Not Allowed**：函数路由配置问题，已修复
 - **500 API key not configured**：环境变量未正确设置
 - **404 index.css**：静态文件引用问题，已修复
+- **apiKey is not defined**：代码版本未更新，请强制重新部署
+- **Mixed Content**：HTTPS混合内容问题，已修复为自动转换HTTP到HTTPS
 
 EdgeOne部署完成后，应用将获得更好的性能和稳定性！

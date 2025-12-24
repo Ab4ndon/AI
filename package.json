@@ -1,0 +1,28 @@
+{
+  "name": "ai-english-teacher---xiao-ke's-review",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "setup": "node scripts/setup.js",
+    "deploy": "bash scripts/deploy.sh",
+    "deploy:docker": "bash scripts/deploy.sh --docker",
+    "test:tts": "node -e \"import('./services/dashscopeTest.ts').then(m => m.testDashScopeConnection())\"",
+    "lint": "tsc --noEmit",
+    "clean": "rm -rf dist node_modules/.vite"
+  },
+  "dependencies": {
+    "react-dom": "^19.2.3",
+    "lucide-react": "^0.562.0",
+    "react": "^19.2.3"
+  },
+  "devDependencies": {
+    "@types/node": "^22.14.0",
+    "@vitejs/plugin-react": "^5.0.0",
+    "typescript": "~5.8.2",
+    "vite": "^6.2.0"
+  }
+}

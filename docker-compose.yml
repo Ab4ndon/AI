@@ -1,0 +1,26 @@
+version: '3.8'
+
+services:
+  ai-english-teacher:
+    build: .
+    ports:
+      - "4173:4173"
+    environment:
+      - NODE_ENV=production
+      # 在生产环境中设置API Key
+      # - VITE_DASHSCOPE_API_KEY=your_production_api_key
+    volumes:
+      # 可选：挂载日志目录
+      - ./logs:/app/logs
+    restart: unless-stopped
+
+  # 可选：添加nginx反向代理
+  nginx:
+    image: nginx:alpine
+    ports:
+      - "80:80"
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+    depends_on:
+      - ai-english-teacher
+    restart: unless-stopped

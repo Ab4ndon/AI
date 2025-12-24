@@ -1,0 +1,7 @@
+{
+  "name": "AI English Teacher - Xiao Ke's Review",
+  "description": "A gamified, interactive English review app for a 7-year-old student, featuring an AI teacher companion.",
+  "requestFramePermissions": [
+    "microphone"
+  ]
+}

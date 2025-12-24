@@ -21,13 +21,14 @@ enum Phase {
   INTRO = 'INTRO',
   READING = 'READING',
   QUIZ = 'QUIZ',
-  FEEDBACK = 'FEEDBACK'
+  SUMMARY = 'SUMMARY'
 }
 
 const WordConsolidation: React.FC<Props> = ({ onBack, onComplete }) => {
   const [phase, setPhase] = useState<Phase>(Phase.INTRO);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [mistakes, setMistakes] = useState<string[]>([]);
+  const [wordScores, setWordScores] = useState<{word: string, score: number, transcript: string}[]>([]);
   const [teacherMsg, setTeacherMsg] = useState(`让我们来复习一下今天学的单词吧！`);
   const [isProcessing, setIsProcessing] = useState(false);
   const [userInteracted, setUserInteracted] = useState(false);
@@ -181,58 +182,37 @@ const WordConsolidation: React.FC<Props> = ({ onBack, onComplete }) => {
     setSuggestions(detailedFeedback.suggestions);
     setLastScore(detailedFeedback.score); // 使用AI生成的评分
 
+    // 记录单词分数
+    setWordScores(prev => [...prev, {
+      word: currentWord.word,
+      score: detailedFeedback.score,
+      transcript: evaluationResult?.userTranscript || ''
+    }]);
+
     setTimeout(() => {
       setIsProcessing(false);
-      if (isSuccess) {
-        // 重置重试计数
-        setRetryCount(0);
-        setShowSkipButton(false);
-        setTeacherMsg("太棒了！准备进入下一题...");
-        setShowNextButton(true);
+      // 无论成功还是失败，都显示下一题按钮
+      setTeacherMsg("朗读完成！准备进入下一题...");
+      setShowNextButton(true);
 
-        // 根据分数显示动画反馈
-        setTimeout(() => {
-          const score = detailedFeedback.score;
-          if (score >= 80) {
-            setFeedbackAnimation({ type: 'thumbsUp', show: true });
-          } else if (score < 60) {
-            setFeedbackAnimation({ type: 'keepTrying', show: true });
+      // 根据分数显示动画反馈
+      const score = detailedFeedback.score;
+      if (score >= 80) {
+        setFeedbackAnimation({ type: 'thumbsUp', show: true });
+      } else if (score < 60) {
+        setFeedbackAnimation({ type: 'keepTrying', show: true });
+      }
+      // 60-79分不显示动画反馈
+
+      // 如果AI判断需要播放语音指导（每3次失败），播放跟读指导
+      if (detailedFeedback.shouldPlayGuidance) {
+        setTimeout(async () => {
+          try {
+            await speakText(`加油哦${USER_NAME}，跟我读${currentWord.word}`, 'zh-CN');
+          } catch (error) {
+            console.error('语音指导播放失败:', error);
           }
-          // 60-79分不显示动画反馈
-        }, 1000);
-      } else {
-        // Error handling flow
-        setMistakes(prev => [...prev, currentWord.word]);
-
-        // 增加重试计数
-        setRetryCount(newRetryCount);
-
-        // 如果重试7次或更多，显示跳过按钮
-        if (newRetryCount >= 7) {
-          setShowSkipButton(true);
-        }
-
-        // 根据分数显示动画反馈
-        setTimeout(() => {
-          const score = detailedFeedback.score;
-          if (score >= 80) {
-            setFeedbackAnimation({ type: 'thumbsUp', show: true });
-          } else if (score < 60) {
-            setFeedbackAnimation({ type: 'keepTrying', show: true });
-          }
-          // 60-79分不显示动画反馈
-
-          // 如果AI判断需要播放语音指导（每3次失败），播放跟读指导
-          if (detailedFeedback.shouldPlayGuidance) {
-            setTimeout(async () => {
-              try {
-                await speakText(`加油哦${USER_NAME}，跟我读${currentWord.word}`, 'zh-CN');
-              } catch (error) {
-                console.error('语音指导播放失败:', error);
-              }
-            }, 2000); // 在动画显示后播放语音指导
-          }
-        }, 500);
+        }, 1500); // 在动画显示后播放语音指导
       }
     }, 2000);
   };
@@ -257,11 +237,9 @@ const WordConsolidation: React.FC<Props> = ({ onBack, onComplete }) => {
       setCurrentIndex(prev => prev + 1);
       setTeacherMsg(`下一个单词是"${WORDS_DATA[currentIndex + 1].word}"`);
     } else {
-      // Done reading, go to quiz
-      setPhase(Phase.QUIZ);
-      setCurrentIndex(0);
-      prepareQuiz(0);
-      setTeacherMsg("太棒了！所有单词都读完了！现在我们来玩看图选词游戏吧！");
+      // Done reading, go to summary
+      setPhase(Phase.SUMMARY);
+      setTeacherMsg("太棒了！所有单词都读完了！让我们来看看你的表现吧！");
     }
   };
 
@@ -544,6 +522,111 @@ const WordConsolidation: React.FC<Props> = ({ onBack, onComplete }) => {
     );
   };
 
+  const renderSummary = () => {
+    // 计算统计数据
+    const totalWords = wordScores.length;
+    const averageScore = wordScores.reduce((sum, item) => sum + item.score, 0) / totalWords;
+    const excellentCount = wordScores.filter(item => item.score >= 80).length;
+    const goodCount = wordScores.filter(item => item.score >= 60 && item.score < 80).length;
+    const needsImprovementCount = wordScores.filter(item => item.score < 60).length;
+
+    const handleContinuePractice = () => {
+      // 重置所有状态，重新开始
+      setPhase(Phase.INTRO);
+      setCurrentIndex(0);
+      setWordScores([]);
+      setMistakes([]);
+      setRetryCount(0);
+      setTeacherMsg(`让我们来复习一下今天学的单词吧！`);
+    };
+
+    const handleNextChallenge = () => {
+      // 调用父组件的onComplete，进入下一关
+      onComplete(mistakes);
+    };
+
+    return (
+      <div className="flex flex-col flex-1 p-4" onClick={handleUserInteraction}>
+        {/* 庆祝效果 */}
+        <div className="text-center mb-6">
+          <div className="text-6xl mb-4">🎉</div>
+          <h2 className="text-2xl font-bold text-gray-900 mb-2">单词巩固完成！</h2>
+          <p className="text-gray-600">看看你的表现吧！</p>
+        </div>
+
+        {/* 统计卡片 */}
+        <div className="grid grid-cols-2 gap-4 mb-6">
+          <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-4 text-center shadow-lg">
+            <div className="text-3xl font-bold text-blue-600 mb-1">
+              {averageScore.toFixed(0)}
+            </div>
+            <div className="text-sm text-gray-600">平均分数</div>
+          </div>
+          <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-4 text-center shadow-lg">
+            <div className="text-3xl font-bold text-green-600 mb-1">
+              {excellentCount}
+            </div>
+            <div className="text-sm text-gray-600">优秀单词</div>
+          </div>
+          <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-4 text-center shadow-lg">
+            <div className="text-3xl font-bold text-yellow-600 mb-1">
+              {goodCount}
+            </div>
+            <div className="text-sm text-gray-600">良好单词</div>
+          </div>
+          <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-4 text-center shadow-lg">
+            <div className="text-3xl font-bold text-red-600 mb-1">
+              {needsImprovementCount}
+            </div>
+            <div className="text-sm text-gray-600">需要改进</div>
+          </div>
+        </div>
+
+        {/* 单词详情列表 */}
+        <div className="flex-1 overflow-hidden">
+          <h3 className="text-lg font-bold text-gray-900 mb-3">单词详情</h3>
+          <div className="space-y-2 max-h-60 overflow-y-auto">
+            {wordScores.map((item, index) => (
+              <div key={index} className="bg-white/60 backdrop-blur-sm rounded-xl p-3 shadow-sm">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <span className="font-semibold text-gray-900">{item.word}</span>
+                    <span className="text-sm text-gray-600">"{item.transcript}"</span>
+                  </div>
+                  <div className={`px-2 py-1 rounded-full text-xs font-bold ${
+                    item.score >= 80
+                      ? 'bg-green-500 text-white'
+                      : item.score >= 60
+                      ? 'bg-yellow-500 text-white'
+                      : 'bg-red-500 text-white'
+                  }`}>
+                    {item.score}分
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* 操作按钮 */}
+        <div className="flex gap-4 mt-6">
+          <button
+            onClick={handleContinuePractice}
+            className="flex-1 bg-gradient-to-r from-blue-500 to-blue-600 text-white py-3 px-6 rounded-2xl font-bold shadow-lg hover:shadow-xl transition-all active:scale-95"
+          >
+            继续练习
+          </button>
+          <button
+            onClick={handleNextChallenge}
+            className="flex-1 bg-gradient-to-r from-purple-500 to-pink-500 text-white py-3 px-6 rounded-2xl font-bold shadow-lg hover:shadow-xl transition-all active:scale-95"
+          >
+            挑战下一关
+          </button>
+        </div>
+      </div>
+    );
+  };
+
   const renderQuiz = () => {
     const word = WORDS_DATA[currentIndex];
     return (
@@ -640,6 +723,7 @@ const WordConsolidation: React.FC<Props> = ({ onBack, onComplete }) => {
           {phase === Phase.INTRO && renderIntro()}
           {phase === Phase.READING && renderReading()}
           {phase === Phase.QUIZ && renderQuiz()}
+          {phase === Phase.SUMMARY && renderSummary()}
         </div>
       </div>
     </div>

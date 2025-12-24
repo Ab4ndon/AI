@@ -157,6 +157,10 @@ const WordConsolidation: React.FC<Props> = ({ onBack, onComplete }) => {
       setLastRecording(audioBlob);
     }
 
+    // 计算重试次数（用于AI评价）
+    const currentRetryCount = retryCount;
+    const newRetryCount = isSuccess ? 0 : currentRetryCount + 1;
+
     // 生成详细的AI评价和建议（这里会确保有正确的评分）
     const detailedFeedback = await generateDetailedFeedback(
       currentWord.word,
@@ -192,7 +196,6 @@ const WordConsolidation: React.FC<Props> = ({ onBack, onComplete }) => {
         setMistakes(prev => [...prev, currentWord.word]);
 
         // 增加重试计数
-        const newRetryCount = retryCount + 1;
         setRetryCount(newRetryCount);
 
         // 如果重试7次或更多，显示跳过按钮

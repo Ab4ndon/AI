@@ -15,7 +15,7 @@ interface Props {
 }
 
 const SentenceConsolidation: React.FC<Props> = ({ onBack, onComplete }) => {
-  const [step, setStep] = useState(0); // 0: Learn, 1: Read, 2: Practice, 3: Game
+  const [step, setStep] = useState(0); // 0: Learn, 1: Read, 2: Practice, 3: Game, 4: Summary
   const [currentIdx, setCurrentIdx] = useState(0); // For sentences or quiz
   const [teacherMsg, setTeacherMsg] = useState("今天我们要学习3个神奇的句型工具！");
   const [isProcessing, setIsProcessing] = useState(false);
@@ -111,10 +111,11 @@ const SentenceConsolidation: React.FC<Props> = ({ onBack, onComplete }) => {
   const [suggestions, setSuggestions] = useState<string[]>([]);
   const [lastScore, setLastScore] = useState<number | undefined>(undefined);
   const [feedbackMessage, setFeedbackMessage] = useState<string>('');
+  const [showNextButton, setShowNextButton] = useState(false); // 控制下一句按钮显示
   const [practiceSentences, setPracticeSentences] = useState<string[]>([]); // 需要练习的句子
   const [practiceResults, setPracticeResults] = useState<{sentence: string, score: number, transcript: string}[]>([]); // 练习结果
   const [isPracticeRestarting, setIsPracticeRestarting] = useState(false); // 防止重复重启练习
-  const [sentenceResults, setSentenceResults] = useState<{sentence: string, score: number, transcript: string}[]>([]); // 所有句子的朗读结果
+  const [sentenceResults, setSentenceResults] = useState<{sentence: string, score: number, transcript: string, recording?: Blob}[]>([]); // 所有句子的朗读结果
   const [showPracticeComplete, setShowPracticeComplete] = useState(false); // 是否显示练习完成按钮
   const [practiceCompleteMessage, setPracticeCompleteMessage] = useState(''); // 练习完成消息
   const [showSummary, setShowSummary] = useState(false); // 是否显示总结界面
@@ -131,9 +132,6 @@ const SentenceConsolidation: React.FC<Props> = ({ onBack, onComplete }) => {
     stopSpeaking();
   }, [currentIdx, step]);
 
-  // Skip functionality
-  const [retryCount, setRetryCount] = useState(0);
-  const [showSkipButton, setShowSkipButton] = useState(false);
 
   // --- Logic ---
 
@@ -142,29 +140,46 @@ const SentenceConsolidation: React.FC<Props> = ({ onBack, onComplete }) => {
     setCurrentIdx(0);
     setTeacherMsg("让我们来朗读这些句子吧！");
     setFeedbackMessage('');
+    setShowNextButton(false);
   };
 
   const handleNextSentence = () => {
     if (currentIdx < SENTENCES_DATA.length - 1) {
       setCurrentIdx(prev => prev + 1);
-      setRetryCount(0);
-      setShowSkipButton(false);
       setFeedbackMessage('');
       setSuggestions([]);
       setLastRecording(null);
       setLastScore(0);
-      setTeacherMsg("太棒了！下一个句子！");
+      setShowNextButton(false);
     } else {
-      // 句子朗读完成，显示总结页面
-      startPractice(); // 这里会显示总结页面
+      // 句子朗读完成，进入总结页面
+      setStep(4); // 进入总结阶段
+
+      // 播放总结语音
+      setTimeout(async () => {
+        try {
+          await speakText("太棒了！句子朗读练习完成了！让我们看看你的表现吧！", 'zh-CN');
+        } catch (error) {
+          console.error('总结语音播放失败:', error);
+        }
+      }, 500);
     }
   };
 
   const startPractice = () => {
-    // 分析所有句子的朗读结果
-    const totalSentences = sentenceResults.length;
-    const correctSentences = sentenceResults.filter(item => item.score >= 80).length;
-    const wrongSentences = sentenceResults
+    // 分析所有句子的朗读结果 - 基于唯一句子去重
+    const uniqueSentences = new Map();
+    sentenceResults.forEach(item => {
+      // 如果句子不存在或当前分数更高，则更新
+      if (!uniqueSentences.has(item.sentence) || uniqueSentences.get(item.sentence).score < item.score) {
+        uniqueSentences.set(item.sentence, item);
+      }
+    });
+    const uniqueSentenceScores = Array.from(uniqueSentences.values());
+
+    const totalSentences = uniqueSentenceScores.length;
+    const correctSentences = uniqueSentenceScores.filter(item => item.score >= 80).length;
+    const wrongSentences = uniqueSentenceScores
       .filter(item => item.score < 80)
       .map(item => item.sentence);
 
@@ -256,7 +271,7 @@ const SentenceConsolidation: React.FC<Props> = ({ onBack, onComplete }) => {
       evaluationResult?.userTranscript || sentence.text,
       evaluationResult,
       false,
-      retryCount
+      0
     );
 
     setFeedbackMessage(detailedFeedback.message);
@@ -267,7 +282,8 @@ const SentenceConsolidation: React.FC<Props> = ({ onBack, onComplete }) => {
     setSentenceResults(prev => [...prev, {
       sentence: sentence.text,
       score: detailedFeedback.score,
-      transcript: evaluationResult?.userTranscript || ''
+      transcript: evaluationResult?.userTranscript || '',
+      recording: audioBlob || undefined
     }]);
 
     setTimeout(() => {
@@ -276,73 +292,20 @@ const SentenceConsolidation: React.FC<Props> = ({ onBack, onComplete }) => {
         // 停止当前正在播放的音频
         stopSpeaking();
 
-        // 重置重试计数
-        setRetryCount(0);
-        setShowSkipButton(false);
-
-        // 评测通过，自动进入下一题
-        if (currentIdx < SENTENCES_DATA.length - 1) {
-          setCurrentIdx(prev => prev + 1);
-          setTeacherMsg("太棒了！下一个句子！");
-          setFeedbackMessage('');
-          setLastRecording(null);
-          setSuggestions([]);
-        } else {
-          setStep(2); // Go to Game
-          setCurrentIdx(0);
-          setTeacherMsg("读得很好！现在我们来玩「对错游戏」吧！");
-          setFeedbackMessage('');
-          setLastRecording(null);
-          setSuggestions([]);
-        }
+        // 评测通过，显示下一句按钮
+        setShowNextButton(true);
       } else {
-        // 如果发音不对，让用户重试
+        // 如果发音不对，记录错误并继续下一句
         setMistakes(prev => [...prev, sentence.text]);
-
-        // 增加重试计数
-        const newRetryCount = retryCount + 1;
-        setRetryCount(newRetryCount);
-
-        // 如果重试3次或更多，显示跳过按钮
-        if (newRetryCount >= 3) {
-          setShowSkipButton(true);
-        }
-
-        // 取消AI语音提示，只保留文字反馈
+        setShowNextButton(true);
       }
     }, 2000);
   };
 
-  // Skip functionality
-  const handleSkip = () => {
-    // 停止当前正在播放的音频
-    stopSpeaking();
 
-    const sentence = SENTENCES_DATA[currentIdx];
-    setMistakes(prev => [...prev, sentence.text]);
-
-    // 重置状态
-    setRetryCount(0);
-    setShowSkipButton(false);
-    setFeedbackMessage('');
-    setLastRecording(null);
-    setSuggestions([]);
-
-    // 跳到下一个句子
-    if (currentIdx < SENTENCES_DATA.length - 1) {
-      setCurrentIdx(prev => prev + 1);
-      setTeacherMsg(`没关系，我们跳过这个句子。下一个句子！`);
-    } else {
-      // 完成所有句子，进入游戏阶段
-      setStep(2);
-      setCurrentIdx(0);
-      setTeacherMsg("句子部分完成了！现在我们来玩「对错游戏」吧！");
-    }
-  };
-
-  const handleGameChoice = (choice: boolean) => {
+  const handleGameChoice = (choice: string) => {
     const item = QUIZ_DATA[currentIdx];
-    const isCorrect = choice === item.isCorrect;
+    const isCorrect = choice === item.correctAnswer;
 
     if (isCorrect) {
       setGameResult('correct');
@@ -429,20 +392,6 @@ const SentenceConsolidation: React.FC<Props> = ({ onBack, onComplete }) => {
           showFeedback={true}
         />
 
-        {/* 跳过按钮 - 显示重试次数提示 */}
-        {showSkipButton && (
-          <div className="mt-4 text-center">
-            <p className="text-sm text-gray-600 mb-2">
-              已尝试 {retryCount} 次，感觉困难吗？
-            </p>
-            <button
-              onClick={handleSkip}
-              className="px-6 py-2 bg-gray-500 text-white rounded-full font-semibold shadow-lg hover:bg-gray-600 transition-colors active:scale-95"
-            >
-              跳过这个句子
-            </button>
-          </div>
-        )}
 
         {/* 录音回放 */}
         {lastRecording && lastRecording.size > 0 && (
@@ -456,22 +405,14 @@ const SentenceConsolidation: React.FC<Props> = ({ onBack, onComplete }) => {
         )}
         
         {/* 控制按钮 - 只有在用户完成录音后才显示 */}
-        {feedbackMessage && (
+        {showNextButton && (
           <div className="mt-6 flex gap-4 justify-center">
             <button
               onClick={handleNextSentence}
               className="px-6 py-3 bg-blue-500 text-white rounded-full font-semibold shadow-lg hover:bg-blue-600 transition-colors active:scale-95"
             >
-              下一个句子
+              {currentIdx === SENTENCES_DATA.length - 1 ? "查看总结" : "下一个句子"}
             </button>
-            {currentIdx === SENTENCES_DATA.length - 1 && (
-              <button
-                onClick={startPractice}
-                className="px-6 py-3 bg-green-500 text-white rounded-full font-semibold shadow-lg hover:bg-green-600 transition-colors active:scale-95"
-              >
-                开始专项练习
-              </button>
-            )}
           </div>
         )}
 
@@ -483,9 +424,19 @@ const SentenceConsolidation: React.FC<Props> = ({ onBack, onComplete }) => {
   };
 
   const renderSummary = () => {
-    const totalSentences = sentenceResults.length;
-    const correctSentences = sentenceResults.filter(item => item.score >= 80).length;
-    const wrongSentences = sentenceResults.filter(item => item.score < 80);
+    // 计算统计数据 - 基于唯一句子去重
+    const uniqueSentences = new Map();
+    sentenceResults.forEach(item => {
+      // 如果句子不存在或当前分数更高，则更新
+      if (!uniqueSentences.has(item.sentence) || uniqueSentences.get(item.sentence).score < item.score) {
+        uniqueSentences.set(item.sentence, item);
+      }
+    });
+    const uniqueSentenceScores = Array.from(uniqueSentences.values());
+
+    const totalSentences = uniqueSentenceScores.length;
+    const correctSentences = uniqueSentenceScores.filter(item => item.score >= 80).length;
+    const wrongSentences = uniqueSentenceScores.filter(item => item.score < 80);
 
     return (
       <div className="flex flex-col flex-1 p-4" onClick={handleUserInteraction}>
@@ -556,6 +507,162 @@ const SentenceConsolidation: React.FC<Props> = ({ onBack, onComplete }) => {
                 ? 'flex-1 bg-green-500 text-white hover:bg-green-600'
                 : 'w-full bg-green-500 text-white hover:bg-green-600'
             }`}
+          >
+            看图选词
+          </button>
+        </div>
+      </div>
+    );
+  };
+
+  const renderSummaryPhase = () => {
+    // 计算统计数据 - 基于唯一句子去重
+    const uniqueSentences = new Map();
+    sentenceResults.forEach(item => {
+      // 如果句子不存在或当前分数更高，则更新
+      if (!uniqueSentences.has(item.sentence) || uniqueSentences.get(item.sentence).score < item.score) {
+        uniqueSentences.set(item.sentence, item);
+      }
+    });
+    const uniqueSentenceScores = Array.from(uniqueSentences.values());
+
+    const totalSentences = uniqueSentenceScores.length;
+    const averageScore = uniqueSentenceScores.reduce((sum, item) => sum + item.score, 0) / totalSentences;
+    const excellentCount = uniqueSentenceScores.filter(item => item.score >= 80).length;
+    const goodCount = uniqueSentenceScores.filter(item => item.score >= 60 && item.score < 80).length;
+    const needsImprovementCount = uniqueSentenceScores.filter(item => item.score < 60).length;
+
+    const handleContinuePractice = () => {
+      // 分析朗读结果，找出需要练习的句子（分数<80的）
+      const wrongSentences = sentenceResults
+        .filter(item => item.score < 80)
+        .map(item => item.sentence);
+
+      if (wrongSentences.length === 0) {
+        // 如果没有错句，重新开始完整的朗读练习
+        setStep(1); // 回到朗读阶段
+        setCurrentIdx(0);
+        setSentenceResults([]);
+        setRetryCount(0);
+        setTeacherMsg("让我们来重新练习这些句子吧！");
+      } else {
+        // 如果有错句，设置专项练习
+        setPracticeSentences(wrongSentences);
+        setPracticeResults([]);
+        setStep(2); // 进入专项练习阶段
+        setTeacherMsg("让我们来专项练习这些句子吧！");
+      }
+    };
+
+    const handleGoToGame = () => {
+      // 进入看图选词游戏阶段
+      setStep(3);
+      setCurrentIdx(0);
+      setTeacherMsg("太棒了！现在让我们来玩看图选词游戏吧！");
+    };
+
+    return (
+      <div className="flex flex-col flex-1 p-4 relative" onClick={handleUserInteraction}>
+        {/* 分享按钮 - 右上方 */}
+        <button
+          onClick={() => setShowSharePoster(true)}
+          className="absolute top-4 right-4 bg-gradient-to-r from-green-500 to-green-600 text-white p-3 rounded-full shadow-lg hover:shadow-xl transition-all active:scale-95 z-10"
+          title="分享报告"
+        >
+          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.367 2.684 3 3 0 00-5.367-2.684z" />
+          </svg>
+        </button>
+
+        {/* 庆祝效果 */}
+        <div className="text-center mb-6">
+          <div className="text-6xl mb-4">📊</div>
+          <h2 className="text-2xl font-bold text-gray-900 mb-2">句子朗读总结</h2>
+          <p className="text-gray-600">看看你的朗读表现吧！</p>
+        </div>
+
+        {/* 统计卡片 */}
+        <div className="grid grid-cols-2 gap-4 mb-6">
+          <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-4 text-center shadow-lg">
+            <div className="text-3xl font-bold text-blue-600 mb-1">
+              {averageScore.toFixed(0)}
+            </div>
+            <div className="text-sm text-gray-600">平均分数</div>
+          </div>
+          <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-4 text-center shadow-lg">
+            <div className="text-3xl font-bold text-green-600 mb-1">
+              {excellentCount}
+            </div>
+            <div className="text-sm text-gray-600">优秀句子</div>
+          </div>
+          <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-4 text-center shadow-lg">
+            <div className="text-3xl font-bold text-yellow-600 mb-1">
+              {goodCount}
+            </div>
+            <div className="text-sm text-gray-600">良好句子</div>
+          </div>
+          <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-4 text-center shadow-lg">
+            <div className="text-3xl font-bold text-red-600 mb-1">
+              {needsImprovementCount}
+            </div>
+            <div className="text-sm text-gray-600">需要改进</div>
+          </div>
+        </div>
+
+        {/* 句子详情列表 */}
+        <div className="flex-1 overflow-hidden mb-6">
+          <h3 className="text-lg font-bold text-gray-900 mb-3">朗读详情</h3>
+          <div className="space-y-2 max-h-48 overflow-y-auto">
+            {uniqueSentenceScores.map((item, index) => (
+              <div key={index} className="bg-white/60 backdrop-blur-sm rounded-xl p-3 shadow-sm">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3 flex-1">
+                    <div className="flex-1">
+                      <span className="font-semibold text-gray-900 text-sm block">{item.sentence}</span>
+                      <span className="text-xs text-gray-600 block">"{item.transcript}"</span>
+                    </div>
+                    {item.recording && (
+                      <button
+                        onClick={() => {
+                          // 播放录音
+                          const audio = new Audio(URL.createObjectURL(item.recording!));
+                          audio.play();
+                        }}
+                        className="w-8 h-8 bg-blue-500 hover:bg-blue-600 text-white rounded-full flex items-center justify-center shadow-sm transition-colors"
+                        title="播放录音"
+                      >
+                        <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                          <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z" clipRule="evenodd" />
+                        </svg>
+                      </button>
+                    )}
+                  </div>
+                  <div className={`px-2 py-1 rounded-full text-xs font-bold ml-3 ${
+                    item.score >= 80
+                      ? 'bg-green-500 text-white'
+                      : item.score >= 60
+                      ? 'bg-yellow-500 text-white'
+                      : 'bg-red-500 text-white'
+                  }`}>
+                    {item.score}分
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* 操作按钮 */}
+        <div className="flex gap-4">
+          <button
+            onClick={handleContinuePractice}
+            className="flex-1 bg-gradient-to-r from-blue-500 to-blue-600 text-white py-3 px-6 rounded-2xl font-bold shadow-lg hover:shadow-xl transition-all active:scale-95"
+          >
+            继续练习
+          </button>
+          <button
+            onClick={handleGoToGame}
+            className="flex-1 bg-gradient-to-r from-purple-500 to-pink-500 text-white py-3 px-6 rounded-2xl font-bold shadow-lg hover:shadow-xl transition-all active:scale-95"
           >
             看图选词
           </button>
@@ -780,9 +887,15 @@ const SentenceConsolidation: React.FC<Props> = ({ onBack, onComplete }) => {
          <div className="glass-card p-3 rounded-2xl w-full max-w-sm mb-6 relative overflow-hidden card-shadow">
             <img src={item.imageUrl} alt="Quiz" className="w-full h-48 object-cover rounded-xl" />
             <div className="mt-4 p-2 text-center">
-               <p className="text-xl font-bold text-gray-900" style={{textShadow: '0 1px 2px rgba(255,255,255,0.6)'}}>"{item.sentence}"</p>
+               <p className="text-xl font-bold text-gray-900" style={{textShadow: '0 1px 2px rgba(255,255,255,0.6)'}}>{item.sentence}</p>
+               {item.questionType === 'choice' && item.options && (
+                 <div className="mt-2 text-sm text-gray-600">
+                   {item.correctAnswer === 'A' ? 'A. ' + item.options[0] + '    B. ' + item.options[1] :
+                    'A. ' + item.options[0] + '    B. ' + item.options[1]}
+                 </div>
+               )}
             </div>
-            
+
             {/* Feedback Overlay */}
             {gameResult && (
               <div className={`absolute inset-0 bg-opacity-90 flex items-center justify-center ${gameResult === 'correct' ? 'bg-green-100' : 'bg-red-100'}`}>
@@ -791,16 +904,18 @@ const SentenceConsolidation: React.FC<Props> = ({ onBack, onComplete }) => {
             )}
          </div>
 
-         <div className="flex gap-8 w-full max-w-xs justify-center">
-           <button 
-            onClick={() => handleGameChoice(true)}
-            className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center border-4 border-green-200 shadow-lg active:scale-90 transition-transform">
-             <Check size={40} className="text-green-600" />
+         <div className="flex gap-4 w-full max-w-xs">
+           <button
+            onClick={() => handleGameChoice('A')}
+            className="flex-1 py-3 px-4 bg-blue-100 rounded-xl border-2 border-blue-200 shadow-lg active:scale-95 transition-transform text-center">
+             <div className="font-bold text-blue-600 text-lg">A</div>
+             {item.options && <div className="text-sm text-blue-700 mt-1">{item.options[0]}</div>}
            </button>
-           <button 
-            onClick={() => handleGameChoice(false)}
-            className="w-20 h-20 bg-red-100 rounded-full flex items-center justify-center border-4 border-red-200 shadow-lg active:scale-90 transition-transform">
-             <X size={40} className="text-red-600" />
+           <button
+            onClick={() => handleGameChoice('B')}
+            className="flex-1 py-3 px-4 bg-purple-100 rounded-xl border-2 border-purple-200 shadow-lg active:scale-95 transition-transform text-center">
+             <div className="font-bold text-purple-600 text-lg">B</div>
+             {item.options && <div className="text-sm text-purple-700 mt-1">{item.options[1]}</div>}
            </button>
          </div>
       </div>
@@ -832,27 +947,45 @@ const SentenceConsolidation: React.FC<Props> = ({ onBack, onComplete }) => {
           {showSummary && renderSummary()}
           {step === 2 && renderPractice()}
           {step === 3 && renderGame()}
+          {step === 4 && renderSummaryPhase()}
         </div>
       </div>
 
       {/* 分享海报 */}
-      {showSharePoster && (
-        <SharePoster
-          type="sentences"
-          scores={sentenceResults}
-          averageScore={sentenceResults.reduce((sum, item) => sum + item.score, 0) / sentenceResults.length}
-          excellentCount={sentenceResults.filter(item => item.score >= 80).length}
-          goodCount={sentenceResults.filter(item => item.score >= 60 && item.score < 80).length}
-          needsImprovementCount={sentenceResults.filter(item => item.score < 60).length}
-          totalItems={sentenceResults.length}
-          userName={USER_NAME}
-          onBack={() => setShowSharePoster(false)}
-          onPlayRecording={(index) => {
-            // 这里可以实现播放对应录音的逻辑
-            console.log('播放录音:', index);
-          }}
-        />
-      )}
+      {showSharePoster && (() => {
+        // 计算去重后的数据
+        const uniqueSentences = new Map();
+        sentenceResults.forEach(item => {
+          // 如果句子不存在或当前分数更高，则更新
+          if (!uniqueSentences.has(item.sentence) || uniqueSentences.get(item.sentence).score < item.score) {
+            uniqueSentences.set(item.sentence, item);
+          }
+        });
+        const uniqueSentenceScores = Array.from(uniqueSentences.values());
+
+        return (
+          <SharePoster
+            type="sentences"
+            scores={uniqueSentenceScores}
+            averageScore={uniqueSentenceScores.reduce((sum, item) => sum + item.score, 0) / uniqueSentenceScores.length}
+            excellentCount={uniqueSentenceScores.filter(item => item.score >= 80).length}
+            goodCount={uniqueSentenceScores.filter(item => item.score >= 60 && item.score < 80).length}
+            needsImprovementCount={uniqueSentenceScores.filter(item => item.score < 60).length}
+            totalItems={uniqueSentenceScores.length}
+            userName={USER_NAME}
+            onBack={() => setShowSharePoster(false)}
+            onPlayRecording={(index) => {
+              // 播放对应录音
+              const recording = uniqueSentenceScores[index]?.recording;
+              if (recording) {
+                const audio = new Audio(URL.createObjectURL(recording));
+                audio.play();
+              }
+            }}
+            recordings={uniqueSentenceScores.map(item => item.recording).filter(Boolean) as Blob[]}
+          />
+        );
+      })()}
     </div>
   );
 };

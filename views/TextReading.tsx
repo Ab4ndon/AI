@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { STORY_DATA, USER_NAME } from '../constants';
 import TeacherAvatar from '../components/TeacherAvatar';
 import SpeechBubble from '../components/SpeechBubble';
@@ -26,7 +26,7 @@ const analyzeKeyWords = async (storySegments: typeof STORY_DATA): Promise<string
           messages: [
             {
               role: 'user',
-              content: `分析以下英文故事，找出对7岁儿童学习最重要的10-15个重点词汇。这些词汇应该是：
+              content: `分析以下英文故事，找出对7岁儿童学习最重要的4个重点词汇。这些词汇应该是：
 1. 故事中的关键词汇
 2. 相对生僻或需要特别注意的单词
 3. 对理解故事发展有重要作用的词汇
@@ -34,7 +34,7 @@ const analyzeKeyWords = async (storySegments: typeof STORY_DATA): Promise<string
 故事内容：
 "${fullText}"
 
-请只返回词汇列表，用逗号分隔，不要其他解释。格式：word1,word2,word3`
+请只返回4个词汇，用逗号分隔，不要其他解释。格式：word1,word2,word3,word4`
             }
           ]
         },
@@ -54,14 +54,17 @@ const analyzeKeyWords = async (storySegments: typeof STORY_DATA): Promise<string
         word.trim().toLowerCase().replace(/[^a-z]/g, '')
       ).filter((word: string) => word.length > 0);
 
-      return keywords.slice(0, 15); // 限制最多15个
+      // 去重并限制数量在4个以内
+      const uniqueKeywords = [...new Set(keywords)].slice(0, 4);
+
+      return uniqueKeywords;
     }
   } catch (error) {
     console.error('AI分析重点词汇失败:', error);
   }
 
-  // 回退方案：返回一些常见词汇
-  return ['ugly', 'beautiful', 'happy', 'sad', 'tall', 'small', 'big', 'little', 'run', 'walk', 'see', 'look', 'say', 'tell', 'go'];
+  // 回退方案：返回一些常见词汇（最多4个）
+  return ['apple', 'tree', 'pencil', 'bee'];
 };
 import { speakText, stopSpeaking } from '../services/ttsService';
 import { evaluateSpeech } from '../services/speechEvaluationService';
@@ -69,12 +72,12 @@ import { ArrowLeft, Volume2, Sparkles } from 'lucide-react';
 
 interface Props {
   onBack: () => void;
-  onComplete: (mistakes: string[]) => void;
+  onComplete: (mistakes: string[], additionalData?: any) => void;
 }
 
 const TextReading: React.FC<Props> = ({ onBack, onComplete }) => {
   const [currentSegIdx, setCurrentSegIdx] = useState(-1); // -1 = Overview, 0...N = Reading segments
-  const [teacherMsg, setTeacherMsg] = useState("让我们来读故事《Ugly Sunny》吧！先看看故事内容！");
+  const [teacherMsg, setTeacherMsg] = useState("");
   const [isProcessing, setIsProcessing] = useState(false);
   const [userInteracted, setUserInteracted] = useState(false);
   const [pendingVoices, setPendingVoices] = useState<string[]>([]);
@@ -84,11 +87,11 @@ const TextReading: React.FC<Props> = ({ onBack, onComplete }) => {
   const [wrongWords, setWrongWords] = useState<string[]>([]);
   const [retryMode, setRetryMode] = useState(false); // 是否处于重试模式
   const [completedSegments, setCompletedSegments] = useState<number[]>([]);
-  const [showCelebration, setShowCelebration] = useState(false);
-  const [showCompletionOptions, setShowCompletionOptions] = useState(false);
   const [showNextButton, setShowNextButton] = useState(false); // 控制下一题按钮显示
   const [showSharePoster, setShowSharePoster] = useState(false); // 是否显示分享海报
   const [keyWords, setKeyWords] = useState<string[]>([]); // AI分析的重点词汇
+  const [segmentResults, setSegmentResults] = useState<{ text: string; score: number; transcript: string; recording?: Blob }[]>([]); // 存储每个句子的朗读结果
+  const segmentResultsRef = useRef<{ text: string; score: number; transcript: string; recording?: Blob }[]>([]); // 用于同步跟踪数据
 
   // 用户交互检测
   const handleUserInteraction = () => {
@@ -144,7 +147,7 @@ const TextReading: React.FC<Props> = ({ onBack, onComplete }) => {
   useEffect(() => {
     // 短暂延迟后尝试播放介绍词
     const timeout = setTimeout(() => {
-      playVoiceWithFallback(`欢迎来到课文朗读环节，${USER_NAME}！我们将一起阅读精彩的故事《Ugly Sunny》，享受英语学习的乐趣！`);
+      playVoiceWithFallback(`欢迎来到课文朗读环节，${USER_NAME}！我们将一起阅读精彩的故事《The Cloud》，享受英语学习的乐趣！`);
     }, 500);
 
     // AI分析重点词汇
@@ -216,9 +219,10 @@ const TextReading: React.FC<Props> = ({ onBack, onComplete }) => {
       setCurrentSegIdx(prev => prev + 1);
       setTeacherMsg(`没关系，我们跳过这个部分。下一部分...`);
     } else {
-      // 完成所有段落
-      setTeacherMsg("哇！故事部分完成了！太了不起了！");
-      setTimeout(() => onComplete([]), 2000);
+      // 完成所有段落，跳转到总结页面
+      setTimeout(() => {
+        onComplete([], { segmentResults: segmentResultsRef.current });
+      }, 100);
     }
   };
 
@@ -324,8 +328,14 @@ const TextReading: React.FC<Props> = ({ onBack, onComplete }) => {
   };
 
   const handleReadSegment = async (evaluationResult?: any, audioBlob?: Blob) => {
+    console.log('handleReadSegment called with:', { evaluationResult, hasAudioBlob: !!audioBlob });
     setIsProcessing(true);
     const segment = STORY_DATA[currentSegIdx];
+
+    // 保存当前句子的录音数据
+    if (audioBlob) {
+      setLastRecording(audioBlob);
+    }
 
     // 保存录音
     if (audioBlob) {
@@ -339,6 +349,10 @@ const TextReading: React.FC<Props> = ({ onBack, onComplete }) => {
     // 进行句子级别的评分
     const sentenceEvaluation = evaluateSpeech(userTranscript, expectedText, false);
 
+    // 存储句子结果（在函数结尾保存）
+    let finalScore = 0;
+    let finalTranscript = userTranscript;
+
     // 提取错词
     const extractedWrongWords = extractWrongWords(userTranscript, expectedText);
     const wrongWordsCount = extractedWrongWords.length;
@@ -348,14 +362,26 @@ const TextReading: React.FC<Props> = ({ onBack, onComplete }) => {
 
     // 使用真实的评分结果来判断表现
     const accuracy = sentenceEvaluation.accuracy;
-    setLastScore(sentenceEvaluation.score);
+    finalScore = sentenceEvaluation.score;
+    setLastScore(finalScore);
 
     // 特殊处理：没有听到声音的情况
     if (sentenceEvaluation.feedback.includes('没有听到你的声音')) {
       setFeedbackMessage(sentenceEvaluation.feedback);
-      setTimeout(async () => {
-        await speakText("没有听到你的声音哦！试试大声说出来吧！", 'zh-CN');
-      }, 500);
+
+      // 即使没有听到声音，也要保存结果（给个低分）
+      const noAudioResult = {
+        text: segment.text,
+        score: 10, // 给个很低的分数
+        transcript: '', // 空转录
+        recording: audioBlob || undefined
+      };
+
+      setSegmentResults(prev => {
+        const newResults = [...prev, noAudioResult];
+        segmentResultsRef.current = newResults;
+        return newResults;
+      });
 
       setTimeout(() => {
         setIsProcessing(false);
@@ -371,14 +397,24 @@ const TextReading: React.FC<Props> = ({ onBack, onComplete }) => {
       // 使用AI生成个性化反馈
       generateDetailedFeedback(expectedText, userTranscript, sentenceEvaluation, false).then(aiFeedback => {
         setFeedbackMessage(aiFeedback.message);
-        setLastScore(aiFeedback.score);
+        finalScore = aiFeedback.score;
+        setLastScore(finalScore);
 
         // 分数反馈现在通过AI语音提供
 
         setTimeout(() => {
           setIsProcessing(false);
-          setTeacherMsg("太棒了！准备进入下一段...");
-          setShowNextButton(true);
+          if (currentSegIdx >= STORY_DATA.length - 1) {
+            // 最后一句，跳转到总结页面
+            // 当前句子的结果已经在下面保存了，这里直接跳转
+            setTimeout(() => {
+              onComplete([], { segmentResults: segmentResultsRef.current });
+            }, 100);
+          } else {
+            setTeacherMsg("太棒了！准备进入下一段...");
+            setShowNextButton(true);
+          }
+          console.log('处理AI反馈路径');
         }, 2000);
       }).catch(error => {
         console.error('AI反馈生成失败:', error);
@@ -390,8 +426,16 @@ const TextReading: React.FC<Props> = ({ onBack, onComplete }) => {
 
         setTimeout(() => {
           setIsProcessing(false);
-          setTeacherMsg("太棒了！准备进入下一段...");
-          setShowNextButton(true);
+          if (currentSegIdx >= STORY_DATA.length - 1) {
+            // 最后一句，跳转到总结页面
+            // 当前句子的结果已经在下面保存了，这里直接跳转
+            setTimeout(() => {
+              onComplete([], { segmentResults: segmentResultsRef.current });
+            }, 100);
+          } else {
+            setTeacherMsg("太棒了！准备进入下一段...");
+            setShowNextButton(true);
+          }
         }, 2000);
       });
 
@@ -403,7 +447,8 @@ const TextReading: React.FC<Props> = ({ onBack, onComplete }) => {
       // 使用AI生成详细反馈和建议
       generateDetailedFeedback(expectedText, userTranscript, sentenceEvaluation, false).then(aiFeedback => {
         setFeedbackMessage(aiFeedback.message);
-        setLastScore(aiFeedback.score);
+        finalScore = aiFeedback.score;
+        setLastScore(finalScore);
         setSuggestions(aiFeedback.suggestions);
 
         // 分数反馈现在通过AI语音提供
@@ -421,8 +466,18 @@ const TextReading: React.FC<Props> = ({ onBack, onComplete }) => {
             await speakText("表现很好！准备进入下一段吧！", 'zh-CN');
             setTimeout(() => {
               setIsProcessing(false);
-              setTeacherMsg("表现很好！准备进入下一段...");
-              setShowNextButton(true);
+              if (currentSegIdx >= STORY_DATA.length - 1) {
+                // 最后一句，跳转到总结页面
+                onComplete([], { segmentResults: [...segmentResults, {
+                  text: segment.text,
+                  score: finalScore,
+                  transcript: finalTranscript,
+                  recording: lastRecording || undefined
+                }] });
+              } else {
+                setTeacherMsg("表现很好！准备进入下一段...");
+                setShowNextButton(true);
+              }
             }, 1000);
           }, 1000);
       }).catch(error => {
@@ -447,8 +502,18 @@ const TextReading: React.FC<Props> = ({ onBack, onComplete }) => {
             await speakText("表现很好！准备进入下一段吧！", 'zh-CN');
             setTimeout(() => {
               setIsProcessing(false);
-              setTeacherMsg("表现很好！准备进入下一段...");
-              setShowNextButton(true);
+              if (currentSegIdx >= STORY_DATA.length - 1) {
+                // 最后一句，跳转到总结页面
+                onComplete([], { segmentResults: [...segmentResults, {
+                  text: segment.text,
+                  score: finalScore,
+                  transcript: finalTranscript,
+                  recording: lastRecording || undefined
+                }] });
+              } else {
+                setTeacherMsg("表现很好！准备进入下一段...");
+                setShowNextButton(true);
+              }
             }, 1000);
           }, 1000);
         }, 500);
@@ -483,27 +548,33 @@ const TextReading: React.FC<Props> = ({ onBack, onComplete }) => {
 
         setTimeout(() => {
           setIsProcessing(false);
-          setTeacherMsg("有进步！准备进入下一段...");
-          setShowNextButton(true);
+          if (currentSegIdx >= STORY_DATA.length - 1) {
+            // 最后一句，跳转到总结页面
+            setCurrentSegIdx(STORY_DATA.length);
+          } else {
+            setTeacherMsg("有进步！准备进入下一段...");
+            setShowNextButton(true);
+          }
         }, 2000);
       }
     }
+
+    // 保存句子结果到segmentResults
+    const newResult = {
+      text: segment.text,
+      score: finalScore,
+      transcript: finalTranscript,
+      recording: lastRecording || undefined
+    };
+
+    setSegmentResults(prev => {
+      const newResults = [...prev, newResult];
+      segmentResultsRef.current = newResults; // 同步更新 ref
+      return newResults;
+    });
   };
 
-  // 完成阅读的函数
-  const completeReading = () => {
-    setShowCelebration(true);
-    setTeacherMsg("太了不起了，小科！你独立完成了整篇课文的朗读挑战！今天的复习任务，圆满成功！");
-
-    setTimeout(async () => {
-      await speakText("太了不起了，小科！你独立完成了整篇课文的朗读挑战！今天的复习任务，圆满成功！", 'zh-CN');
-    }, 500);
-
-    // 显示完成选项
-    setTimeout(() => {
-      setShowCompletionOptions(true);
-    }, 3000);
-  };
+  // 完成阅读的函数 - 已删除，使用总结页面代替
 
   // 重新开始
   const restartReading = () => {
@@ -558,19 +629,64 @@ const TextReading: React.FC<Props> = ({ onBack, onComplete }) => {
       setWrongWords([]);
       setShowNextButton(false);
     } else {
-      completeReading();
+      // 完成所有段落，跳转到总结页面
+      setTimeout(() => {
+        onComplete([], { segmentResults: segmentResultsRef.current });
+      }, 100);
     }
   };
 
   // 完成复习
   const finishReview = () => {
-    onComplete([]);
+    onComplete([], { segmentResults: segmentResultsRef.current });
+  };
+
+  const renderSummary = () => {
+    return (
+      <div className="flex flex-col flex-1 p-4 relative" onClick={handleUserInteraction}>
+        {/* 分享按钮 - 右上方 */}
+        <button
+          onClick={() => setShowSharePoster(true)}
+          className="absolute top-4 right-4 bg-gradient-to-r from-green-500 to-green-600 text-white p-3 rounded-full shadow-lg hover:shadow-xl transition-all active:scale-95 z-10"
+          title="分享报告"
+        >
+          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.367 2.684 3 3 0 00-5.367-2.684z" />
+          </svg>
+        </button>
+
+        {/* 庆祝效果 */}
+        <div className="text-center mb-6">
+          <div className="text-6xl mb-4">📖</div>
+          <h2 className="text-2xl font-bold text-gray-900 mb-2">课文朗读总结</h2>
+          <p className="text-gray-600">太棒了！你完成了整篇课文的朗读！</p>
+        </div>
+
+        {/* 完成选项 */}
+        <div className="flex-1 flex flex-col justify-center">
+          <div className="space-y-4 max-w-sm mx-auto">
+            <button
+              onClick={restartReading}
+              className="w-full py-4 px-6 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-2xl font-bold shadow-lg hover:shadow-xl transition-all active:scale-95"
+            >
+              再次练习
+            </button>
+            <button
+              onClick={finishReview}
+              className="w-full py-4 px-6 bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-2xl font-bold shadow-lg hover:shadow-xl transition-all active:scale-95"
+            >
+              结束学习
+            </button>
+          </div>
+        </div>
+      </div>
+    );
   };
 
   const renderOverview = () => (
     <div className="flex flex-col h-full p-6">
       <div className="flex-1 glass-card rounded-2xl p-6 overflow-y-auto mb-4 custom-scrollbar card-shadow">
-        <h2 className="text-2xl font-bold text-center text-white mb-4 drop-shadow-2xl" style={{textShadow: '0 2px 4px rgba(0,0,0,0.3), 0 4px 8px rgba(0,0,0,0.2)'}}>Ugly Sunny</h2>
+        <h2 className="text-2xl font-bold text-center text-white mb-4 drop-shadow-2xl" style={{textShadow: '0 2px 4px rgba(0,0,0,0.3), 0 4px 8px rgba(0,0,0,0.2)'}}>The Cloud</h2>
         {STORY_DATA.map(seg => (
           <p key={seg.id} className="text-gray-900 mb-4 leading-relaxed font-medium" style={{textShadow: '0 1px 2px rgba(255,255,255,0.5)'}}>
             <HighlightedStoryText text={seg.text} keyWords={keyWords} />
@@ -630,7 +746,8 @@ const TextReading: React.FC<Props> = ({ onBack, onComplete }) => {
                 重点练习
               </h3>
               <div className="space-y-3">
-                {wrongWords.map((word, index) => (
+                {/* 去重并限制在4个以内 */}
+                {[...new Set(wrongWords)].slice(0, 4).map((word, index) => (
                   <div key={index} className="flex items-center justify-between p-3 bg-white/10 rounded-xl backdrop-blur-sm">
                     <span className="text-xl font-bold text-white">{word}</span>
                     <button
@@ -667,14 +784,14 @@ const TextReading: React.FC<Props> = ({ onBack, onComplete }) => {
           showFeedback={true}
         />
 
-        {/* 下一题按钮 */}
-        {showNextButton && (
+        {/* 下一句按钮 - 当有反馈消息时显示 */}
+        {feedbackMessage && (
           <div className="mt-6 text-center">
             <button
               onClick={handleNextSegment}
               className="px-8 py-3 bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-2xl font-bold text-lg shadow-lg hover:from-blue-600 hover:to-purple-700 transition-all duration-200 active:scale-95"
             >
-              下一题
+              下一句
             </button>
           </div>
         )}
@@ -716,49 +833,16 @@ const TextReading: React.FC<Props> = ({ onBack, onComplete }) => {
 
   return (
     <div className="h-full flex flex-col gradient-bg-text">
-      {/* 庆祝动画 */}
-      <StarEffect show={showCelebration} />
-
-      {/* 完成选项界面 */}
-      {showCompletionOptions && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="glass-card p-8 rounded-3xl max-w-sm w-full text-center card-shadow">
-            <div className="text-6xl mb-4">🎉</div>
-            <h2 className="text-2xl font-bold text-white mb-4">挑战完成！</h2>
-            <p className="text-gray-200 mb-6">你已经成功完成了整篇课文的朗读！</p>
-            <div className="space-y-3">
-              <button
-                onClick={restartReading}
-                className="w-full py-3 px-6 bg-yellow-500 hover:bg-yellow-600 text-white rounded-2xl font-bold transition-colors"
-              >
-                再学一遍
-              </button>
-              <button
-                onClick={() => setShowSharePoster(true)}
-                className="w-full py-3 px-6 bg-green-500 hover:bg-green-600 text-white rounded-2xl font-bold transition-colors"
-              >
-                📤 分享成果
-              </button>
-              <button
-                onClick={finishReview}
-                className="w-full py-3 px-6 bg-indigo-500 hover:bg-indigo-600 text-white rounded-2xl font-bold transition-colors"
-              >
-                完成复习
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
 
       <div className="flex items-center p-4 glass-card z-10 rounded-b-2xl">
         <button onClick={onBack} className="p-2 -ml-2 text-gray-500">
           <ArrowLeft />
         </button>
-        <span className="font-bold text-lg gradient-text-green ml-2">课文朗读</span>
+        <span className="font-bold text-lg gradient-text-green ml-2">The Cloud</span>
       </div>
 
       {/* 只在概览阶段显示TeacherAvatar */}
-      {currentSegIdx === -1 && (
+      {currentSegIdx === -1 && currentSegIdx !== STORY_DATA.length && (
         <div className="p-4 pb-0 flex-shrink-0">
           <TeacherAvatar message={teacherMsg} />
         </div>
@@ -767,7 +851,8 @@ const TextReading: React.FC<Props> = ({ onBack, onComplete }) => {
       <div className="flex-1 min-h-0" onClick={handleUserInteraction}>
         <div className="h-full overflow-y-auto custom-scrollbar">
           {console.log('TextReading rendering currentSegIdx:', currentSegIdx)}
-          {currentSegIdx === -1 ? renderOverview() : renderSegment()}
+          {currentSegIdx === -1 ? renderOverview() :
+           currentSegIdx === STORY_DATA.length ? renderSummary() : renderSegment()}
         </div>
       </div>
 

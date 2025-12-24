@@ -3,8 +3,12 @@ export enum AppView {
   WORDS = 'WORDS',
   SENTENCES = 'SENTENCES',
   TEXT = 'TEXT',
+  TEXT_SUMMARY = 'TEXT_SUMMARY',
+  TEXT_COMPLETION = 'TEXT_COMPLETION',
   REPORT = 'REPORT'
 }
+
+export type ReturningModuleType = AppView | 'TEXT_SUMMARY_COMPLETE' | null;
 
 export interface WordItem {
   id: string;
@@ -27,6 +31,9 @@ export interface QuizItem {
   imageUrl: string;
   sentence: string;
   isCorrect: boolean;
+  options?: string[]; // A, B选项
+  correctAnswer?: string; // 正确答案 'A' 或 'B'
+  questionType?: 'yesno' | 'choice'; // 题目类型
 }
 
 export interface StorySegment {

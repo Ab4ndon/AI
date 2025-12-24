@@ -5,12 +5,14 @@ interface WordScore {
   word: string;
   score: number;
   transcript: string;
+  recording?: Blob;
 }
 
 interface SentenceScore {
   sentence: string;
   score: number;
   transcript: string;
+  recording?: Blob;
 }
 
 interface SharePosterProps {

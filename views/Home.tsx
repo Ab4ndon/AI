@@ -8,9 +8,11 @@ import { speakText, stopSpeaking } from '../services/ttsService';
 interface HomeProps {
   onChangeView: (view: AppView) => void;
   completedModules: string[];
+  returningFromModule?: AppView | null;
+  onGoToReport?: () => void;
 }
 
-const Home: React.FC<HomeProps> = ({ onChangeView, completedModules }) => {
+const Home: React.FC<HomeProps> = ({ onChangeView, completedModules, returningFromModule, onGoToReport }) => {
   const [greeting, setGreeting] = useState(`${USER_NAME}，下课回来啦！Bella看到你完成了'秋季第一讲'的学习，真棒！让我们一起来巩固今天学的内容吧。我们从'单词巩固'开始！`);
   const [showSummary, setShowSummary] = useState(false);
   const [showModules, setShowModules] = useState(false);
@@ -111,8 +113,35 @@ const Home: React.FC<HomeProps> = ({ onChangeView, completedModules }) => {
       setShowModules(true);
     }, 2000);
 
-    // 只有第一次打开应用时才播放欢迎语音
-    if (isFirstVisit) {
+    // 根据返回的模块播放不同的语音
+    if (returningFromModule === AppView.WORDS) {
+      // 从单词巩固模块返回，播放句型巩固提示
+      setGreeting(`${USER_NAME}，单词巩固完成得非常棒！现在让我们继续巩固句型吧！`);
+      const timeout3 = setTimeout(() => {
+        if (!userInteracted) { // 只在用户未交互时播放
+          playVoiceWithFallback(`${USER_NAME}，单词巩固完成得非常棒！现在让我们继续巩固句型吧！`);
+        }
+      }, 500);
+      timeouts.push(timeout3);
+    } else if (returningFromModule === AppView.SENTENCES) {
+      // 从句子巩固模块返回，播放课文朗读提示
+      setGreeting(`${USER_NAME}，句子巩固完成得非常棒！现在让我们继续学习课文朗读吧！`);
+      const timeout3 = setTimeout(() => {
+        if (!userInteracted) { // 只在用户未交互时播放
+          playVoiceWithFallback(`${USER_NAME}，句子巩固完成得非常棒！现在让我们继续学习课文朗读吧！`);
+        }
+      }, 500);
+      timeouts.push(timeout3);
+    } else if (returningFromModule === AppView.TEXT_COMPLETION || returningFromModule === 'TEXT_SUMMARY_COMPLETE') {
+      // 从课文完成或总结页面结束学习返回，触发恭喜特效，然后跳转到报告页面
+      const timeout3 = setTimeout(() => {
+        if (onGoToReport) {
+          onGoToReport();
+        }
+      }, 2000);
+      timeouts.push(timeout3);
+    } else if (isFirstVisit) {
+      // 只有第一次打开应用时才播放欢迎语音
       const timeout3 = setTimeout(() => {
         if (!userInteracted) { // 只在用户未交互时播放
           playVoiceWithFallback(`${USER_NAME}，下课回来啦！Bella看到你完成了'秋季第一讲'的学习，真棒！让我们一起来巩固今天学的内容吧。我们从'单词巩固'开始！`);
@@ -133,7 +162,7 @@ const Home: React.FC<HomeProps> = ({ onChangeView, completedModules }) => {
       // 停止任何可能还在播放的语音
       stopSpeaking();
     };
-  }, []); // 只在组件首次挂载时执行
+  }, [returningFromModule]); // 添加returningFromModule依赖
 
   // 添加全局点击监听器来检测用户交互
   useEffect(() => {
@@ -211,9 +240,10 @@ const Home: React.FC<HomeProps> = ({ onChangeView, completedModules }) => {
             <span>课堂小结</span>
           </h3>
           <div className="space-y-2 text-sm text-gray-700">
-            <p><span className="font-bold gradient-text">主题：</span> Are you happy?</p>
-            <p><span className="font-bold gradient-text">单词：</span> beautiful, ugly, tall...</p>
-            <p><span className="font-bold gradient-text">句型：</span> I'm... / Are you...?</p>
+            <p><span className="font-bold gradient-text">主题：</span> Is it an umbrella?</p>
+            <p><span className="font-bold gradient-text">单词：</span> notebook, page, radio, umbrella, vase, window</p>
+            <p><span className="font-bold gradient-text">句型：</span> Is it a/an...? Yes, it is./No, it isn't.</p>
+            <p><span className="font-bold gradient-text">阅读：</span> The Cloud</p>
           </div>
         </div>
       )}
@@ -227,7 +257,8 @@ const Home: React.FC<HomeProps> = ({ onChangeView, completedModules }) => {
             const isDone = completedModules.includes(mod.view);
             const isNext = !isDone && (index === 0 || completedModules.includes(modules[index-1].view));
             // 如果单词巩固已完成，高亮句型巩固
-            const isHighlighted = mod.view === AppView.SENTENCES && completedModules.includes(AppView.WORDS) && !isDone;
+            const isHighlighted = (mod.view === AppView.SENTENCES && completedModules.includes(AppView.WORDS) && !isDone) ||
+                                  (mod.view === AppView.TEXT && completedModules.includes(AppView.SENTENCES) && !isDone);
 
             return (
               <button

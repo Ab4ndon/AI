@@ -120,6 +120,8 @@ const SentenceConsolidation: React.FC<Props> = ({ onBack, onComplete }) => {
   const [showSummary, setShowSummary] = useState(false); // 是否显示总结界面
   const [summaryMessage, setSummaryMessage] = useState(''); // 总结消息
   const [showSharePoster, setShowSharePoster] = useState(false); // 是否显示分享海报
+  const [practiceCompleteVoicePlayed, setPracticeCompleteVoicePlayed] = useState(false); // 是否已经播放练习完成语音
+  const [practiceIncompleteVoicePlayed, setPracticeIncompleteVoicePlayed] = useState(false); // 是否已经播放练习未完成语音
 
   // Game state
   const [gameResult, setGameResult] = useState<'correct' | 'wrong' | null>(null);
@@ -192,6 +194,9 @@ const SentenceConsolidation: React.FC<Props> = ({ onBack, onComplete }) => {
   const handleContinuePractice = () => {
     setShowSummary(false);
     setPracticeResults([]);
+    setPracticeCompleteVoicePlayed(false); // 重置完成语音状态
+    setPracticeIncompleteVoicePlayed(false); // 重置未完成语音状态
+    setShowPracticeComplete(false); // 隐藏完成界面
     setStep(2); // 进入专项练习阶段
 
     // AI语音提示
@@ -570,46 +575,52 @@ const SentenceConsolidation: React.FC<Props> = ({ onBack, onComplete }) => {
 
       if (stillWrongSentences.length === 0) {
         // 练习后全对
-        setTimeout(async () => {
-          try {
-            await speakText("太好了！现在这些句子都读顺了！我们去玩游戏吧！", 'zh-CN');
-            setTimeout(() => {
+        if (!practiceCompleteVoicePlayed) {
+          setPracticeCompleteVoicePlayed(true);
+          setTimeout(async () => {
+            try {
+              await speakText("太好了！现在这些句子都读顺了！我们去玩游戏吧！", 'zh-CN');
+              setTimeout(() => {
+                setShowPracticeComplete(true);
+                setPracticeCompleteMessage("太好了！现在这些句子都读顺了！");
+              }, 2000);
+            } catch (error) {
+              console.error('AI语音播放失败:', error);
               setShowPracticeComplete(true);
               setPracticeCompleteMessage("太好了！现在这些句子都读顺了！");
-            }, 2000);
-          } catch (error) {
-            console.error('AI语音播放失败:', error);
-            setShowPracticeComplete(true);
-            setPracticeCompleteMessage("太好了！现在这些句子都读顺了！");
-          }
-        }, 500);
+            }
+          }, 500);
+        }
         return null;
       } else {
         // 练习后仍有错 - 显示结果后显示按钮让用户点击进入游戏
-        setTimeout(async () => {
-          try {
-            await speakText("越读越好了！这几个句子我们平时可以多念念。", 'zh-CN');
+        if (!practiceIncompleteVoicePlayed) {
+          setPracticeIncompleteVoicePlayed(true);
+          setTimeout(async () => {
+            try {
+              await speakText("越读越好了！这几个句子我们平时可以多念念。", 'zh-CN');
 
-            // 显示错误句子列表2秒后显示按钮
-            setTimeout(async () => {
-              try {
-                await speakText("现在我们出发去玩判断游戏！", 'zh-CN');
-                setTimeout(() => {
+              // 显示错误句子列表2秒后显示按钮
+              setTimeout(async () => {
+                try {
+                  await speakText("现在我们出发去玩判断游戏！", 'zh-CN');
+                  setTimeout(() => {
+                    setShowPracticeComplete(true);
+                    setPracticeCompleteMessage("越读越好了！");
+                  }, 1500);
+                } catch (error) {
+                  console.error('AI语音播放失败:', error);
                   setShowPracticeComplete(true);
                   setPracticeCompleteMessage("越读越好了！");
-                }, 1500);
-              } catch (error) {
-                console.error('AI语音播放失败:', error);
-                setShowPracticeComplete(true);
-                setPracticeCompleteMessage("越读越好了！");
-              }
-            }, 2000);
-          } catch (error) {
-            console.error('AI语音播放失败:', error);
-            setShowPracticeComplete(true);
-            setPracticeCompleteMessage("越读越好了！");
-          }
-        }, 500);
+                }
+              }, 2000);
+            } catch (error) {
+              console.error('AI语音播放失败:', error);
+              setShowPracticeComplete(true);
+              setPracticeCompleteMessage("越读越好了！");
+            }
+          }, 500);
+        }
 
         return (
           <div className="flex flex-col flex-1 items-center justify-center p-8">

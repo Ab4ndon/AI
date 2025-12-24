@@ -162,7 +162,8 @@ const WordConsolidation: React.FC<Props> = ({ onBack, onComplete }) => {
       currentWord.word,
       evaluationResult?.userTranscript || currentWord.word,
       evaluationResult,
-      true
+      true,
+      newRetryCount
     );
 
     setFeedbackMessage(detailedFeedback.message);
@@ -210,22 +211,21 @@ const WordConsolidation: React.FC<Props> = ({ onBack, onComplete }) => {
                 await speakText(detailedFeedback.suggestions[0], 'zh-CN');
               }, 1500);
             }
+
+            // 如果AI判断需要播放语音指导（每3次失败）
+            if (detailedFeedback.shouldPlayGuidance) {
+              setTimeout(async () => {
+                try {
+                  await speakText(`加油哦${USER_NAME}，跟我读${currentWord.word}`, 'zh-CN');
+                } catch (error) {
+                  console.error('语音指导播放失败:', error);
+                }
+              }, 3000); // 在评价和建议后播放语音指导
+            }
           } catch (error) {
             console.error('AI评价语音播报失败:', error);
           }
         }, 500);
-
-        // 每3次失败触发一次语音指导（第3、6、9...次）
-        if (newRetryCount % 3 === 0) {
-          setTimeout(async () => {
-            try {
-              // 连续播放鼓励 + "跟我读" + 单词，中间没有停顿
-              await speakText(`加油哦${USER_NAME}，跟我读${currentWord.word}`, 'zh-CN');
-            } catch (error) {
-              console.error('语音提示播放失败:', error);
-            }
-          }, 2000); // 在AI评价后播放语音指导
-        }
       }
     }, 2000);
   };

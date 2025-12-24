@@ -41,6 +41,14 @@ const NETLIFY_FUNCTIONS_BASE = import.meta.env.DEV
   ? '/.netlify/functions'  // 开发环境
   : '/.netlify/functions'; // 生产环境
 
+// DashScope API Key
+const apiKey = import.meta.env.VITE_DASHSCOPE_API_KEY;
+
+// API 基础URL
+const BASE_URL = import.meta.env.DEV
+  ? '/api/dashscope/api/v1/services/aigc/text-generation/generation'  // 开发环境使用代理
+  : 'https://dashscope.aliyuncs.com/api/v1/services/aigc/text-generation/generation'; // 生产环境直接调用
+
 export const generateTeacherFeedback = async (
   context: string,
   studentInput: string,

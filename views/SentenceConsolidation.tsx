@@ -116,6 +116,8 @@ const SentenceConsolidation: React.FC<Props> = ({ onBack, onComplete }) => {
   const [sentenceResults, setSentenceResults] = useState<{sentence: string, score: number, transcript: string}[]>([]); // 所有句子的朗读结果
   const [showPracticeComplete, setShowPracticeComplete] = useState(false); // 是否显示练习完成按钮
   const [practiceCompleteMessage, setPracticeCompleteMessage] = useState(''); // 练习完成消息
+  const [showSummary, setShowSummary] = useState(false); // 是否显示总结界面
+  const [summaryMessage, setSummaryMessage] = useState(''); // 总结消息
 
   // Game state
   const [gameResult, setGameResult] = useState<'correct' | 'wrong' | null>(null);
@@ -156,40 +158,64 @@ const SentenceConsolidation: React.FC<Props> = ({ onBack, onComplete }) => {
 
   const startPractice = () => {
     // 分析所有句子的朗读结果
+    const totalSentences = sentenceResults.length;
+    const correctSentences = sentenceResults.filter(item => item.score >= 80).length;
     const wrongSentences = sentenceResults
       .filter(item => item.score < 80)
       .map(item => item.sentence);
 
-    if (wrongSentences.length === 0) {
-      // 路径A：全部正确
-      setTimeout(async () => {
-        try {
-          await speakText("太棒了！每个句子都读得又准又好听！我们马上去玩判断游戏！", 'zh-CN');
-          setTimeout(() => {
-            setShowPracticeComplete(true);
-            setPracticeCompleteMessage("太棒了！每个句子都读得又准又好听！");
-          }, 2000);
-        } catch (error) {
-          console.error('AI语音播放失败:', error);
-          setShowPracticeComplete(true);
-          setPracticeCompleteMessage("太棒了！每个句子都读得又准又好听！");
-        }
-      }, 500);
-    } else {
-      // 路径B：部分错误 - 进入专项练习
-      setPracticeSentences(wrongSentences);
-      setPracticeResults([]);
-      setStep(2);
+    // 显示总结界面
+    setShowSummary(true);
+    setPracticeSentences(wrongSentences);
 
-      // AI语音反馈
-      setTimeout(async () => {
-        try {
-          await speakText("读得很用心！有几个句子的语调我们可以听听看。", 'zh-CN');
-        } catch (error) {
-          console.error('AI语音播放失败:', error);
-        }
-      }, 500);
+    // 生成总结消息
+    let summaryMsg = '';
+    if (wrongSentences.length === 0) {
+      summaryMsg = `太棒了！你把${totalSentences}个句子都读得又准又好听！`;
+    } else {
+      summaryMsg = `你读了${totalSentences}个句子，其中${correctSentences}个读得很好，还有${wrongSentences.length}个句子可以再练习一下。`;
     }
+    setSummaryMessage(summaryMsg);
+
+    // AI语音总结
+    setTimeout(async () => {
+      try {
+        await speakText(summaryMsg, 'zh-CN');
+      } catch (error) {
+        console.error('AI语音总结失败:', error);
+      }
+    }, 500);
+  };
+
+  const handleContinuePractice = () => {
+    setShowSummary(false);
+    setPracticeResults([]);
+    setStep(2); // 进入专项练习阶段
+
+    // AI语音提示
+    setTimeout(async () => {
+      try {
+        if (practiceSentences.length > 0) {
+          await speakText("好的，让我们来练习这些句子吧！", 'zh-CN');
+        }
+      } catch (error) {
+        console.error('AI语音提示失败:', error);
+      }
+    }, 500);
+  };
+
+  const handleGoToGame = () => {
+    setShowSummary(false);
+    setStep(3); // 直接进入游戏阶段
+
+    // AI语音提示
+    setTimeout(async () => {
+      try {
+        await speakText("好的，让我们去看图选词吧！", 'zh-CN');
+      } catch (error) {
+        console.error('AI语音提示失败:', error);
+      }
+    }, 500);
   };
 
   const handleReadComplete = async (evaluationResult?: any, audioBlob?: Blob) => {
@@ -429,6 +455,82 @@ const SentenceConsolidation: React.FC<Props> = ({ onBack, onComplete }) => {
 
         <div className="mt-4 text-sm text-gray-400 text-center">
           第 {currentIdx + 1} 句，共 {SENTENCES_DATA.length} 句
+        </div>
+      </div>
+    );
+  };
+
+  const renderSummary = () => {
+    const totalSentences = sentenceResults.length;
+    const correctSentences = sentenceResults.filter(item => item.score >= 80).length;
+    const wrongSentences = sentenceResults.filter(item => item.score < 80);
+
+    return (
+      <div className="flex flex-col flex-1 p-4" onClick={handleUserInteraction}>
+        {/* 总结标题 */}
+        <div className="text-center mb-8">
+          <h2 className="text-2xl font-bold text-gray-900 mb-4">朗读总结</h2>
+          <p className="text-lg text-gray-700">{summaryMessage}</p>
+        </div>
+
+        {/* 详细统计 */}
+        <div className="grid grid-cols-2 gap-4 mb-8">
+          <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-4 text-center shadow-lg">
+            <div className="text-3xl font-bold text-green-600 mb-1">
+              {correctSentences}
+            </div>
+            <div className="text-sm text-gray-600">读得很好</div>
+          </div>
+          <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-4 text-center shadow-lg">
+            <div className="text-3xl font-bold text-blue-600 mb-1">
+              {totalSentences}
+            </div>
+            <div className="text-sm text-gray-600">总句数</div>
+          </div>
+        </div>
+
+        {/* 错误句子列表（如果有的话） */}
+        {wrongSentences.length > 0 && (
+          <div className="mb-8">
+            <h3 className="text-lg font-bold text-gray-900 mb-3">可以继续练习的句子：</h3>
+            <div className="space-y-2">
+              {wrongSentences.map((result, index) => (
+                <div key={index} className="bg-white/60 backdrop-blur-sm rounded-xl p-3 shadow-sm">
+                  <div className="flex items-center justify-between">
+                    <div className="flex flex-col gap-1">
+                      <span className="font-semibold text-gray-900 text-sm">{result.sentence}</span>
+                      <span className="text-xs text-gray-600">"{result.transcript}"</span>
+                    </div>
+                    <div className="px-2 py-1 rounded-full text-xs font-bold bg-red-500 text-white">
+                      {result.score}分
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* 选择按钮 */}
+        <div className="flex gap-4 justify-center mt-auto">
+          {wrongSentences.length > 0 && (
+            <button
+              onClick={handleContinuePractice}
+              className="flex-1 px-6 py-3 bg-blue-500 text-white rounded-full font-semibold shadow-lg hover:bg-blue-600 transition-colors active:scale-95"
+            >
+              继续练习
+            </button>
+          )}
+          <button
+            onClick={handleGoToGame}
+            className={`px-6 py-3 rounded-full font-semibold shadow-lg hover:opacity-90 transition-colors active:scale-95 ${
+              wrongSentences.length > 0
+                ? 'flex-1 bg-green-500 text-white hover:bg-green-600'
+                : 'w-full bg-green-500 text-white hover:bg-green-600'
+            }`}
+          >
+            看图选词
+          </button>
         </div>
       </div>
     );
@@ -682,8 +784,8 @@ const SentenceConsolidation: React.FC<Props> = ({ onBack, onComplete }) => {
         <span className="font-bold text-lg gradient-text-blue ml-2">句型巩固</span>
       </div>
 
-      {/* 只在非朗读和非练习阶段显示TeacherAvatar */}
-      {step !== 1 && step !== 2 && (
+      {/* 只在非朗读、非练习和非总结阶段显示TeacherAvatar */}
+      {step !== 1 && step !== 2 && !showSummary && (
         <div className="p-4 pb-0 flex-shrink-0">
           <TeacherAvatar message={teacherMsg} />
         </div>
@@ -693,6 +795,7 @@ const SentenceConsolidation: React.FC<Props> = ({ onBack, onComplete }) => {
         <div className="h-full overflow-y-auto custom-scrollbar">
           {step === 0 && renderCards()}
           {step === 1 && renderReading()}
+          {showSummary && renderSummary()}
           {step === 2 && renderPractice()}
           {step === 3 && renderGame()}
         </div>

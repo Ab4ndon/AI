@@ -3,18 +3,12 @@
   "functions": {
     "dashscope-tts": {
       "runtime": "edge",
-      "path": "/dashscope-tts",
-      "file": "edge-functions/dashscope-tts/index.js"
+      "routes": ["/dashscope-tts"],
+      "file": "functions/dashscope-tts/index.js"
     }
   },
   "build": {
     "command": "npm run build",
     "outputDir": "dist"
-  },
-  "routes": [
-    {
-      "pattern": "/dashscope-tts",
-      "function": "dashscope-tts"
-    }
-  ]
+  }
 }

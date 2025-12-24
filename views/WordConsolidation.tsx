@@ -28,6 +28,7 @@ const WordConsolidation: React.FC<Props> = ({ onBack, onComplete }) => {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [mistakes, setMistakes] = useState<string[]>([]);
   const [wordScores, setWordScores] = useState<{word: string, score: number, transcript: string}[]>([]);
+  const [showWelcomeAnimation, setShowWelcomeAnimation] = useState(false);
   const [teacherMsg, setTeacherMsg] = useState(`让我们来复习一下今天学的单词吧！`);
   const [isProcessing, setIsProcessing] = useState(false);
   const [userInteracted, setUserInteracted] = useState(false);
@@ -224,16 +225,26 @@ const WordConsolidation: React.FC<Props> = ({ onBack, onComplete }) => {
       setCurrentIndex(prev => prev + 1);
       setTeacherMsg(`下一个单词是"${WORDS_DATA[currentIndex + 1].word}"`);
     } else {
-      // Done reading, go to summary
-      setPhase(Phase.SUMMARY);
-      setTeacherMsg("太棒了！所有单词都读完了！让我们来看看你的表现吧！");
+      // Done reading, show welcome animation first
+      setShowWelcomeAnimation(true);
 
       // AI语音朗读总结
       setTimeout(async () => {
         try {
           await speakText("真棒，所有单词都朗读结束了，让我们来看一下你的表现吧", 'zh-CN');
+
+          // 语音播放完后进入总结页面
+          setTimeout(() => {
+            setShowWelcomeAnimation(false);
+            setPhase(Phase.SUMMARY);
+          }, 2000);
         } catch (error) {
           console.error('AI总结语音播放失败:', error);
+          // 即使语音失败也要进入总结页面
+          setTimeout(() => {
+            setShowWelcomeAnimation(false);
+            setPhase(Phase.SUMMARY);
+          }, 2000);
         }
       }, 500);
     }
@@ -623,6 +634,31 @@ const WordConsolidation: React.FC<Props> = ({ onBack, onComplete }) => {
     );
   };
 
+  const renderWelcomeAnimation = () => {
+    return (
+      <div className="flex flex-col flex-1 items-center justify-center p-8">
+        {/* 庆祝效果 */}
+        <div className="text-center mb-8">
+          <div className="text-8xl mb-6 animate-bounce">🎉</div>
+          <div className="text-6xl mb-4">👩‍🏫</div>
+          <div className="text-2xl font-bold text-white mb-2 animate-pulse">
+            Bella老师
+          </div>
+          <div className="text-lg text-white/90">
+            正在为你准备成绩单...
+          </div>
+        </div>
+
+        {/* 加载动画 */}
+        <div className="flex items-center gap-2">
+          <div className="w-3 h-3 bg-white rounded-full animate-bounce"></div>
+          <div className="w-3 h-3 bg-white rounded-full animate-bounce" style={{animationDelay: '0.1s'}}></div>
+          <div className="w-3 h-3 bg-white rounded-full animate-bounce" style={{animationDelay: '0.2s'}}></div>
+        </div>
+      </div>
+    );
+  };
+
   const renderQuiz = () => {
     const word = WORDS_DATA[currentIndex];
     return (
@@ -699,8 +735,8 @@ const WordConsolidation: React.FC<Props> = ({ onBack, onComplete }) => {
         </div>
       </div>
 
-      {/* 只在非朗读阶段显示TeacherAvatar */}
-      {phase !== Phase.READING && (
+      {/* 只在非朗读和非总结阶段显示TeacherAvatar */}
+      {phase !== Phase.READING && phase !== Phase.SUMMARY && (
         <div className="p-4 pb-0 flex-shrink-0">
           <TeacherAvatar message={teacherMsg} mood={phase === Phase.QUIZ ? 'excited' : 'happy'} />
         </div>
@@ -708,6 +744,7 @@ const WordConsolidation: React.FC<Props> = ({ onBack, onComplete }) => {
 
       <div className="flex-1 overflow-hidden" onClick={handleUserInteraction}>
         <div className="h-full overflow-y-auto custom-scrollbar">
+          {showWelcomeAnimation && renderWelcomeAnimation()}
           {phase === Phase.INTRO && renderIntro()}
           {phase === Phase.READING && renderReading()}
           {phase === Phase.QUIZ && renderQuiz()}

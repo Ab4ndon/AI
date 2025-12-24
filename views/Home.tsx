@@ -215,12 +215,6 @@ const Home: React.FC<HomeProps> = ({ onChangeView, completedModules }) => {
             <p><span className="font-bold gradient-text">单词：</span> beautiful, ugly, tall...</p>
             <p><span className="font-bold gradient-text">句型：</span> I'm... / Are you...?</p>
           </div>
-          <div className="mt-4 p-3 bg-gradient-to-r from-yellow-50 to-orange-50 rounded-xl border border-yellow-200">
-            <p className="text-sm text-gray-800">
-              <span className="font-bold text-yellow-600">✨ 个人亮点：</span>
-              你今天掌握了7个新单词，并且能够准确发音！继续保持哦！
-            </p>
-          </div>
         </div>
       )}
 

@@ -20,7 +20,8 @@ enum Phase {
   INTRO = 'INTRO',
   READING = 'READING',
   QUIZ = 'QUIZ',
-  SUMMARY = 'SUMMARY'
+  SUMMARY = 'SUMMARY',
+  PRACTICE = 'PRACTICE' // 专项跟读练习阶段
 }
 
 const WordConsolidation: React.FC<Props> = ({ onBack, onComplete }) => {
@@ -29,6 +30,8 @@ const WordConsolidation: React.FC<Props> = ({ onBack, onComplete }) => {
   const [mistakes, setMistakes] = useState<string[]>([]);
   const [wordScores, setWordScores] = useState<{word: string, score: number, transcript: string}[]>([]);
   const [showWelcomeAnimation, setShowWelcomeAnimation] = useState(false);
+  const [practiceWords, setPracticeWords] = useState<string[]>([]); // 需要练习的单词
+  const [practiceResults, setPracticeResults] = useState<{word: string, score: number, transcript: string}[]>([]); // 练习结果
   const [teacherMsg, setTeacherMsg] = useState(`让我们来复习一下今天学的单词吧！`);
   const [isProcessing, setIsProcessing] = useState(false);
   const [userInteracted, setUserInteracted] = useState(false);
@@ -225,28 +228,43 @@ const WordConsolidation: React.FC<Props> = ({ onBack, onComplete }) => {
       setCurrentIndex(prev => prev + 1);
       setTeacherMsg(`下一个单词是"${WORDS_DATA[currentIndex + 1].word}"`);
     } else {
-      // Done reading, show welcome animation first
-      setShowWelcomeAnimation(true);
+      // 分析朗读结果，决定进入哪个路径
+      const wrongWords = wordScores
+        .filter(item => item.score < 80) // 80分以下算错
+        .map(item => item.word);
 
-      // AI语音朗读总结
-      setTimeout(async () => {
-        try {
-          await speakText("真棒，所有单词都朗读结束了，让我们来看一下你的表现吧", 'zh-CN');
+      if (wrongWords.length === 0) {
+        // 路径A：全部正确
+        setShowWelcomeAnimation(true);
+        setTimeout(async () => {
+          try {
+            await speakText("太棒了！所有单词都读对了！我们去看图认词吧！", 'zh-CN');
+            setTimeout(() => {
+              setShowWelcomeAnimation(false);
+              // 直接进入下一环节
+              onComplete(mistakes);
+            }, 2000);
+          } catch (error) {
+            console.error('AI语音播放失败:', error);
+            setShowWelcomeAnimation(false);
+            onComplete(mistakes);
+          }
+        }, 500);
+      } else {
+        // 路径B：部分错误 - 进入专项练习
+        setPracticeWords(wrongWords);
+        setPracticeResults([]);
+        setPhase(Phase.PRACTICE);
 
-          // 语音播放完后进入总结页面
-          setTimeout(() => {
-            setShowWelcomeAnimation(false);
-            setPhase(Phase.SUMMARY);
-          }, 2000);
-        } catch (error) {
-          console.error('AI总结语音播放失败:', error);
-          // 即使语音失败也要进入总结页面
-          setTimeout(() => {
-            setShowWelcomeAnimation(false);
-            setPhase(Phase.SUMMARY);
-          }, 2000);
-        }
-      }, 500);
+        // AI语音反馈
+        setTimeout(async () => {
+          try {
+            await speakText("读得真认真！大部分都很好，不过我们特别注意一下这几个词的发音。", 'zh-CN');
+          } catch (error) {
+            console.error('AI语音播放失败:', error);
+          }
+        }, 500);
+      }
     }
   };
 
@@ -529,6 +547,181 @@ const WordConsolidation: React.FC<Props> = ({ onBack, onComplete }) => {
     );
   };
 
+  const renderPractice = () => {
+    const currentPracticeWord = practiceWords[practiceResults.length];
+
+    if (!currentPracticeWord) {
+      // 练习完成，分析结果
+      const stillWrongWords = practiceResults
+        .filter(item => item.score < 80)
+        .map(item => item.word);
+
+      if (stillWrongWords.length === 0) {
+        // 练习后全对
+        setTimeout(async () => {
+          try {
+            await speakText("太棒了！现在所有单词的读音都掌握啦！我们去挑战看图选词吧！", 'zh-CN');
+            setTimeout(() => {
+              onComplete(mistakes);
+            }, 2000);
+          } catch (error) {
+            console.error('AI语音播放失败:', error);
+            onComplete(mistakes);
+          }
+        }, 500);
+        return null;
+      } else {
+        // 练习后仍有错
+        setTimeout(async () => {
+          try {
+            await speakText("读得越来越好了！下面这几个词的读音我们要多加练习呦。", 'zh-CN');
+
+            // 显示错误单词2秒后自动进入下一环节
+            setTimeout(() => {
+              setTimeout(async () => {
+                try {
+                  await speakText("现在我们先去挑战看图选词吧！", 'zh-CN');
+                  setTimeout(() => {
+                    onComplete(mistakes);
+                  }, 1500);
+                } catch (error) {
+                  console.error('AI语音播放失败:', error);
+                  onComplete(mistakes);
+                }
+              }, 2000);
+            }, 2000);
+          } catch (error) {
+            console.error('AI语音播放失败:', error);
+            onComplete(mistakes);
+          }
+        }, 500);
+
+        return (
+          <div className="flex flex-col flex-1 items-center justify-center p-8">
+            <div className="text-center mb-6">
+              <h2 className="text-2xl font-bold text-gray-900 mb-4">需要继续练习的单词</h2>
+              <div className="flex flex-wrap gap-2 justify-center">
+                {stillWrongWords.map((word, index) => (
+                  <span key={index} className="px-3 py-1 bg-red-100 text-red-800 rounded-full text-sm font-medium">
+                    {word}
+                  </span>
+                ))}
+              </div>
+            </div>
+          </div>
+        );
+      }
+    }
+
+    const handlePracticeRecordEnd = async (evaluationResult?: any, audioBlob?: Blob) => {
+      if (!currentPracticeWord) return;
+
+      setIsProcessing(true);
+
+      // 生成AI评价
+      const detailedFeedback = await generateDetailedFeedback(
+        currentPracticeWord,
+        evaluationResult?.userTranscript || currentPracticeWord,
+        evaluationResult,
+        true,
+        0 // 练习阶段不传递重试次数
+      );
+
+      // 记录练习结果
+      setPracticeResults(prev => [...prev, {
+        word: currentPracticeWord,
+        score: detailedFeedback.score,
+        transcript: evaluationResult?.userTranscript || ''
+      }]);
+
+      // AI示范发音
+      setTimeout(async () => {
+        try {
+          await speakText(currentPracticeWord, 'en-US');
+          setTimeout(() => {
+            setIsProcessing(false);
+          }, 1000);
+        } catch (error) {
+          console.error('AI示范发音失败:', error);
+          setIsProcessing(false);
+        }
+      }, 500);
+    };
+
+    return (
+      <div className="flex flex-col flex-1 p-4" onClick={handleUserInteraction}>
+        {/* 练习进度 */}
+        <div className="text-center mb-6">
+          <h2 className="text-xl font-bold text-gray-900 mb-2">专项跟读练习</h2>
+          <p className="text-gray-600">
+            进度：{practiceResults.length + 1} / {practiceWords.length}
+          </p>
+          <div className="flex justify-center gap-1 mt-2">
+            {practiceWords.map((_, index) => (
+              <div
+                key={index}
+                className={`w-3 h-3 rounded-full ${
+                  index < practiceResults.length
+                    ? 'bg-green-500'
+                    : index === practiceResults.length
+                    ? 'bg-blue-500'
+                    : 'bg-gray-300'
+                }`}
+              />
+            ))}
+          </div>
+        </div>
+
+        {/* 当前练习单词 */}
+        <div className="flex-1 flex flex-col items-center justify-center">
+          <div className="text-center mb-8">
+            <div className="text-4xl font-bold text-blue-600 mb-4">
+              {currentPracticeWord}
+            </div>
+            <p className="text-gray-600">请跟老师一起读</p>
+          </div>
+
+          {/* 录音按钮 */}
+          <AudioButton
+            onRecordStart={() => stopSpeaking()}
+            onRecordEnd={handlePracticeRecordEnd}
+            isProcessing={isProcessing}
+            label="按住跟读"
+            expectedText={currentPracticeWord}
+            isWord={true}
+            showFeedback={true}
+          />
+        </div>
+
+        {/* 练习结果展示 */}
+        {practiceResults.length > 0 && (
+          <div className="mt-6">
+            <h3 className="text-lg font-bold text-gray-900 mb-3">练习结果</h3>
+            <div className="space-y-2">
+              {practiceResults.map((result, index) => (
+                <div key={index} className="bg-white/60 backdrop-blur-sm rounded-xl p-3 shadow-sm">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <span className="font-semibold text-gray-900">{result.word}</span>
+                      <span className="text-sm text-gray-600">"{result.transcript}"</span>
+                    </div>
+                    <div className={`px-2 py-1 rounded-full text-xs font-bold ${
+                      result.score >= 80
+                        ? 'bg-green-500 text-white'
+                        : 'bg-red-500 text-white'
+                    }`}>
+                      {result.score}分
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
+    );
+  };
+
   const renderSummary = () => {
     // 计算统计数据
     const totalWords = wordScores.length;
@@ -748,6 +941,7 @@ const WordConsolidation: React.FC<Props> = ({ onBack, onComplete }) => {
           {phase === Phase.INTRO && renderIntro()}
           {phase === Phase.READING && renderReading()}
           {phase === Phase.QUIZ && renderQuiz()}
+          {phase === Phase.PRACTICE && renderPractice()}
           {phase === Phase.SUMMARY && renderSummary()}
         </div>
       </div>

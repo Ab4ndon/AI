@@ -97,9 +97,12 @@ export const speakText = async (text: string, lang: string = 'zh-CN', userInitia
     }
 
     if (audioUrl) {
+      // 修复混合内容问题：将HTTP URL转换为HTTPS
+      const secureAudioUrl = audioUrl.replace(/^http:/, 'https:');
       console.log('Found audio URL:', audioUrl);
+      console.log('Using secure URL:', secureAudioUrl);
       // 创建音频元素并播放
-      const audio = new Audio(audioUrl);
+      const audio = new Audio(secureAudioUrl);
       audio.volume = 1.0;
 
       return new Promise((resolve, reject) => {

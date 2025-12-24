@@ -60,3 +60,50 @@ View your app in AI Studio: https://ai.studio/apps/drive/17SBNHprxzizMO8eSZUt_UQ
    - **403错误**：API Key权限不足
 
 如需测试语音功能，请确保配置了有效的DashScope API Key。
+
+## 部署到EdgeOne
+
+本项目支持一键部署到腾讯云EdgeOne，提供全球CDN加速和边缘计算服务。
+
+### 部署步骤
+
+1. **登录腾讯云控制台**：
+   - 访问 [EdgeOne控制台](https://console.cloud.tencent.com/edgeone)
+
+2. **创建应用**：
+   - 点击"创建应用"
+   - 选择"Pages"部署方式
+   - 连接GitHub仓库：`https://github.com/Ab4ndon/AI.git`
+
+3. **配置环境变量**：
+   - 在EdgeOne控制台的环境变量设置中添加：
+     ```
+     VITE_DASHSCOPE_API_KEY=your_dashscope_api_key_here
+     DASHSCOPE_API_KEY=your_dashscope_api_key_here
+     ```
+   - 注意：需要同时设置两个变量，前端和边缘函数各用一个
+
+4. **配置边缘函数**：
+   - EdgeOne会自动识别 `edge-functions/` 目录中的函数
+   - 边缘函数用于代理DashScope API请求，解决CORS问题
+
+5. **部署应用**：
+   - 保存配置后，EdgeOne会自动构建和部署
+   - 部署完成后获得类似 `https://xxx.edgeone.cool` 的域名
+
+### EdgeOne特性
+
+- ✅ **全球CDN加速**：就近访问，提升用户体验
+- ✅ **边缘函数代理**：自动解决CORS跨域问题
+- ✅ **自动HTTPS**：免费SSL证书
+- ✅ **GitHub集成**：代码变更自动触发重新部署
+
+### 故障排除
+
+如果部署后语音功能仍然不工作：
+
+1. **检查环境变量**：确保两个API Key都已正确配置
+2. **查看函数日志**：在EdgeOne控制台查看边缘函数运行日志
+3. **检查网络连接**：确认EdgeOne能够访问DashScope API
+
+EdgeOne部署完成后，应用将获得更好的性能和稳定性！

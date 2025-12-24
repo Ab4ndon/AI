@@ -1,0 +1,23 @@
+{
+  "name": "myenglishai",
+  "functions": {
+    "dashscope-tts": {
+      "runtime": "edge",
+      "path": "/dashscope-tts",
+      "file": "edge-functions/dashscope-tts/index.js",
+      "env": {
+        "DASHSCOPE_API_KEY": "{{DASHSCOPE_API_KEY}}"
+      }
+    }
+  },
+  "build": {
+    "command": "npm run build",
+    "outputDir": "dist"
+  },
+  "routes": [
+    {
+      "pattern": "/dashscope-tts",
+      "function": "dashscope-tts"
+    }
+  ]
+}

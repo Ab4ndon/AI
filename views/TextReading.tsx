@@ -372,7 +372,13 @@ const TextReading: React.FC<Props> = ({ onBack, onComplete }) => {
         setLastScore(aiFeedback.score);
 
         setTimeout(async () => {
-          await speakText(aiFeedback.message, 'zh-CN');
+          const score = aiFeedback.score;
+          if (score >= 80) {
+            await speakText('真棒', 'zh-CN');
+          } else if (score < 60) {
+            await speakText('继续加油呀', 'zh-CN');
+          }
+          // 60-79分不播放语音反馈
         }, 500);
 
         setTimeout(() => {
@@ -408,7 +414,13 @@ const TextReading: React.FC<Props> = ({ onBack, onComplete }) => {
 
         // AI反馈生成后播放语音
         setTimeout(async () => {
-          await speakText(aiFeedback.message, 'zh-CN');
+          const score = aiFeedback.score;
+          if (score >= 80) {
+            await speakText('真棒', 'zh-CN');
+          } else if (score < 60) {
+            await speakText('继续加油呀', 'zh-CN');
+          }
+          // 60-79分不播放语音反馈
 
           // 错词重练
           setTimeout(async () => {

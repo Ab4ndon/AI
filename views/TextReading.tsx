@@ -423,7 +423,6 @@ const TextReading: React.FC<Props> = ({ onBack, onComplete }) => {
               setShowNextButton(true);
             }, 1000);
           }, 1000);
-        }, 500);
       }).catch(error => {
         console.error('AI反馈生成失败:', error);
         // 回退到默认反馈

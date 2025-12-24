@@ -193,20 +193,7 @@ const SentenceConsolidation: React.FC<Props> = ({ onBack, onComplete }) => {
           setShowSkipButton(true);
         }
 
-        // 发音不正确时，播放AI教师的温柔语音提示和正确读音
-        setTimeout(async () => {
-          try {
-            // 播放温柔的提示语
-            await speakText(`没关系，${USER_NAME}。让我示范一下正确的读法。`, 'zh-CN');
-
-            // 等待一秒后播放正确读音
-            setTimeout(async () => {
-              await speakText(sentence.text, 'en-US');
-            }, 1000);
-          } catch (error) {
-            console.error('语音提示播放失败:', error);
-          }
-        }, 500); // 在文字反馈显示后0.5秒开始语音提示
+        // 取消AI语音提示，只保留文字反馈
       }
     }, 2000);
   };

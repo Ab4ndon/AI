@@ -4,6 +4,7 @@ import TeacherAvatar from '../components/TeacherAvatar';
 import SpeechBubble from '../components/SpeechBubble';
 import AudioButton from '../components/AudioButton';
 import AudioPlayback from '../components/AudioPlayback';
+import SharePoster from '../components/SharePoster';
 import { generateDetailedFeedback } from '../services/qwenService';
 import { speakText, speakSimpleText, stopSpeaking } from '../services/ttsService';
 import { ArrowLeft, Check, X, Volume2 } from 'lucide-react';
@@ -118,6 +119,7 @@ const SentenceConsolidation: React.FC<Props> = ({ onBack, onComplete }) => {
   const [practiceCompleteMessage, setPracticeCompleteMessage] = useState(''); // 练习完成消息
   const [showSummary, setShowSummary] = useState(false); // 是否显示总结界面
   const [summaryMessage, setSummaryMessage] = useState(''); // 总结消息
+  const [showSharePoster, setShowSharePoster] = useState(false); // 是否显示分享海报
 
   // Game state
   const [gameResult, setGameResult] = useState<'correct' | 'wrong' | null>(null);
@@ -522,6 +524,12 @@ const SentenceConsolidation: React.FC<Props> = ({ onBack, onComplete }) => {
             </button>
           )}
           <button
+            onClick={() => setShowSharePoster(true)}
+            className="bg-gradient-to-r from-green-500 to-green-600 text-white py-3 px-6 rounded-full font-semibold shadow-lg hover:shadow-xl transition-all active:scale-95"
+          >
+            📤 分享成果
+          </button>
+          <button
             onClick={handleGoToGame}
             className={`px-6 py-3 rounded-full font-semibold shadow-lg hover:opacity-90 transition-colors active:scale-95 ${
               wrongSentences.length > 0
@@ -800,6 +808,25 @@ const SentenceConsolidation: React.FC<Props> = ({ onBack, onComplete }) => {
           {step === 3 && renderGame()}
         </div>
       </div>
+
+      {/* 分享海报 */}
+      {showSharePoster && (
+        <SharePoster
+          type="sentences"
+          scores={sentenceResults}
+          averageScore={sentenceResults.reduce((sum, item) => sum + item.score, 0) / sentenceResults.length}
+          excellentCount={sentenceResults.filter(item => item.score >= 80).length}
+          goodCount={sentenceResults.filter(item => item.score >= 60 && item.score < 80).length}
+          needsImprovementCount={sentenceResults.filter(item => item.score < 60).length}
+          totalItems={sentenceResults.length}
+          userName={USER_NAME}
+          onBack={() => setShowSharePoster(false)}
+          onPlayRecording={(index) => {
+            // 这里可以实现播放对应录音的逻辑
+            console.log('播放录音:', index);
+          }}
+        />
+      )}
     </div>
   );
 };

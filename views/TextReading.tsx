@@ -5,6 +5,7 @@ import SpeechBubble from '../components/SpeechBubble';
 import AudioButton from '../components/AudioButton';
 import AudioPlayback from '../components/AudioPlayback';
 import StarEffect from '../components/StarEffect';
+import SharePoster from '../components/SharePoster';
 import { generateDetailedFeedback } from '../services/qwenService';
 
 // AI分析重点词汇的函数
@@ -86,6 +87,7 @@ const TextReading: React.FC<Props> = ({ onBack, onComplete }) => {
   const [showCelebration, setShowCelebration] = useState(false);
   const [showCompletionOptions, setShowCompletionOptions] = useState(false);
   const [showNextButton, setShowNextButton] = useState(false); // 控制下一题按钮显示
+  const [showSharePoster, setShowSharePoster] = useState(false); // 是否显示分享海报
   const [keyWords, setKeyWords] = useState<string[]>([]); // AI分析的重点词汇
 
   // 用户交互检测
@@ -732,6 +734,12 @@ const TextReading: React.FC<Props> = ({ onBack, onComplete }) => {
                 再学一遍
               </button>
               <button
+                onClick={() => setShowSharePoster(true)}
+                className="w-full py-3 px-6 bg-green-500 hover:bg-green-600 text-white rounded-2xl font-bold transition-colors"
+              >
+                📤 分享成果
+              </button>
+              <button
                 onClick={finishReview}
                 className="w-full py-3 px-6 bg-indigo-500 hover:bg-indigo-600 text-white rounded-2xl font-bold transition-colors"
               >
@@ -762,6 +770,25 @@ const TextReading: React.FC<Props> = ({ onBack, onComplete }) => {
           {currentSegIdx === -1 ? renderOverview() : renderSegment()}
         </div>
       </div>
+
+      {/* 分享海报 */}
+      {showSharePoster && (
+        <SharePoster
+          type="text"
+          scores={[]} // 课文朗读没有详细的分数统计
+          averageScore={85} // 默认优秀成绩
+          excellentCount={1}
+          goodCount={0}
+          needsImprovementCount={0}
+          totalItems={1}
+          userName={USER_NAME}
+          onBack={() => setShowSharePoster(false)}
+          onPlayRecording={(index) => {
+            // 课文朗读可能没有录音回放
+            console.log('课文朗读分享');
+          }}
+        />
+      )}
     </div>
   );
 };

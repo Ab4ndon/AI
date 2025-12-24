@@ -6,6 +6,7 @@ import SpeechBubble from '../components/SpeechBubble';
 import AudioButton from '../components/AudioButton';
 import AudioPlayback from '../components/AudioPlayback';
 import StarEffect from '../components/StarEffect';
+import SharePoster from '../components/SharePoster';
 import { generateDetailedFeedback } from '../services/qwenService';
 import { speakText, speakSimpleText, stopSpeaking } from '../services/ttsService';
 import { playSoundEffect } from '../services/soundEffectService';
@@ -31,6 +32,7 @@ const WordConsolidation: React.FC<Props> = ({ onBack, onComplete }) => {
   const [wordScores, setWordScores] = useState<{word: string, score: number, transcript: string}[]>([]);
   const [showWelcomeAnimation, setShowWelcomeAnimation] = useState(false);
   const [practiceWords, setPracticeWords] = useState<string[]>([]); // 需要练习的单词
+  const [showSharePoster, setShowSharePoster] = useState(false); // 是否显示分享海报
   const [practiceResults, setPracticeResults] = useState<{word: string, score: number, transcript: string}[]>([]); // 练习结果
   const [isPracticeRestarting, setIsPracticeRestarting] = useState(false); // 防止重复重启练习
   const [teacherMsg, setTeacherMsg] = useState(`让我们来复习一下今天学的单词吧！`);
@@ -520,7 +522,7 @@ const WordConsolidation: React.FC<Props> = ({ onBack, onComplete }) => {
               onClick={handleNextWord}
               className="px-8 py-3 bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-2xl font-bold text-lg shadow-lg hover:from-blue-600 hover:to-purple-700 transition-all duration-200 active:scale-95"
             >
-              下一题
+              下一个单词
             </button>
           </div>
         )}
@@ -847,6 +849,12 @@ const WordConsolidation: React.FC<Props> = ({ onBack, onComplete }) => {
             继续练习
           </button>
           <button
+            onClick={() => setShowSharePoster(true)}
+            className="bg-gradient-to-r from-green-500 to-green-600 text-white py-3 px-6 rounded-2xl font-bold shadow-lg hover:shadow-xl transition-all active:scale-95"
+          >
+            📤 分享成果
+          </button>
+          <button
             onClick={handleNextChallenge}
             className="flex-1 bg-gradient-to-r from-purple-500 to-pink-500 text-white py-3 px-6 rounded-2xl font-bold shadow-lg hover:shadow-xl transition-all active:scale-95"
           >
@@ -975,6 +983,25 @@ const WordConsolidation: React.FC<Props> = ({ onBack, onComplete }) => {
           {phase === Phase.SUMMARY && renderSummary()}
         </div>
       </div>
+
+      {/* 分享海报 */}
+      {showSharePoster && (
+        <SharePoster
+          type="words"
+          scores={wordScores}
+          averageScore={wordScores.reduce((sum, item) => sum + item.score, 0) / wordScores.length}
+          excellentCount={wordScores.filter(item => item.score >= 80).length}
+          goodCount={wordScores.filter(item => item.score >= 60 && item.score < 80).length}
+          needsImprovementCount={wordScores.filter(item => item.score < 60).length}
+          totalItems={wordScores.length}
+          userName={USER_NAME}
+          onBack={() => setShowSharePoster(false)}
+          onPlayRecording={(index) => {
+            // 这里可以实现播放对应录音的逻辑
+            console.log('播放录音:', index);
+          }}
+        />
+      )}
     </div>
   );
 };

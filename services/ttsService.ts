@@ -24,7 +24,7 @@ const API_ENDPOINT = getApiEndpoint();
 // 音色配置
 const VOICE_CONFIG = {
   'zh-CN': 'Cherry', // 中文音色
-  'en-US': 'Alex'    // 英文音色
+  'en-US': 'alloy'   // 英文音色 - 使用支持的语音
 };
 
 // 使用 DashScope API 进行高质量语音合成
@@ -212,6 +212,32 @@ export const stopSpeaking = (): void => {
     }
   } catch (error) {
     // 忽略Web Audio API相关的错误
+  }
+};
+
+// 简单的浏览器语音合成（用于练习阶段）
+export const speakSimpleText = async (text: string, lang: string = 'en-US'): Promise<void> => {
+  // 检查浏览器是否支持语音合成
+  if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
+    return new Promise((resolve, reject) => {
+      // 停止之前的语音
+      stopSpeaking();
+
+      const utterance = new SpeechSynthesisUtterance(text);
+      utterance.lang = lang;
+      utterance.rate = 0.8; // 稍微慢一点，便于学习
+      utterance.pitch = 1.0;
+      utterance.volume = 1.0;
+
+      utterance.onend = () => resolve();
+      utterance.onerror = (error) => reject(error);
+
+      window.speechSynthesis.speak(utterance);
+    });
+  } else {
+    // 如果浏览器不支持语音合成，使用AI语音作为后备
+    console.log('浏览器不支持语音合成，使用AI语音');
+    return speakText(text, lang);
   }
 };
 

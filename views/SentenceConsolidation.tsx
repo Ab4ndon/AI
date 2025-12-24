@@ -147,7 +147,8 @@ const SentenceConsolidation: React.FC<Props> = ({ onBack, onComplete }) => {
       sentence.text,
       evaluationResult?.userTranscript || sentence.text,
       evaluationResult,
-      false
+      false,
+      retryCount
     );
 
     setFeedbackMessage(detailedFeedback.message);

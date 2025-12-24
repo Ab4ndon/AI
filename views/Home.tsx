@@ -226,7 +226,7 @@ const Home: React.FC<HomeProps> = ({ onChangeView, completedModules }) => {
 
       {/* Modules List - Show after summary */}
       {showModules && (
-        <div className="flex-1 space-y-4 overflow-y-auto custom-scrollbar">
+        <div className="flex-1 space-y-4">
           <h3 className="gradient-text font-bold text-lg px-2 mb-3 animate-slide-in" style={{ animationDelay: '0.2s' }}>今日复习计划</h3>
 
           {modules.map((mod, index) => {

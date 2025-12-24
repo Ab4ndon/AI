@@ -87,7 +87,7 @@ const App: React.FC = () => {
 
   return (
     <div className="w-full h-screen gradient-bg-primary overflow-hidden flex justify-center items-center p-4">
-      <div className="w-full h-full max-w-sm glass-card rounded-3xl shadow-2xl overflow-hidden relative">
+      <div className="w-full h-full max-w-sm glass-card rounded-3xl shadow-2xl overflow-y-auto relative">
         {renderView()}
       </div>
     </div>

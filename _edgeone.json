@@ -4,10 +4,7 @@
     "dashscope-tts": {
       "runtime": "edge",
       "path": "/dashscope-tts",
-      "file": "edge-functions/dashscope-tts/index.js",
-      "env": {
-        "DASHSCOPE_API_KEY": "{{DASHSCOPE_API_KEY}}"
-      }
+      "file": "edge-functions/dashscope-tts/index.js"
     }
   },
   "build": {

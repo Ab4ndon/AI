@@ -81,7 +81,8 @@ View your app in AI Studio: https://ai.studio/apps/drive/17SBNHprxzizMO8eSZUt_UQ
      VITE_DASHSCOPE_API_KEY=your_dashscope_api_key_here
      DASHSCOPE_API_KEY=your_dashscope_api_key_here
      ```
-   - 注意：需要同时设置两个变量，前端和边缘函数各用一个
+   - **重要**：必须设置 `DASHSCOPE_API_KEY`（无VITE_前缀），这是边缘函数使用的变量
+   - `VITE_DASHSCOPE_API_KEY` 用于前端代码
 
 4. **配置边缘函数**：
    - EdgeOne会自动识别 `edge-functions/` 目录中的函数

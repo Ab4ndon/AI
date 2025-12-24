@@ -183,12 +183,18 @@ const WordConsolidation: React.FC<Props> = ({ onBack, onComplete }) => {
         setTeacherMsg("太棒了！准备进入下一题...");
         setShowNextButton(true);
 
-        // AI语音播报评价
+        // 根据分数播放简短的语音反馈
         setTimeout(async () => {
           try {
-            await speakText(detailedFeedback.message, 'zh-CN');
+            const score = detailedFeedback.score;
+            if (score >= 80) {
+              await speakText('真棒', 'zh-CN');
+            } else if (score < 60) {
+              await speakText('继续加油呀', 'zh-CN');
+            }
+            // 60-79分不播放语音反馈
           } catch (error) {
-            console.error('AI评价语音播报失败:', error);
+            console.error('语音反馈播放失败:', error);
           }
         }, 1000);
       } else {
@@ -203,19 +209,18 @@ const WordConsolidation: React.FC<Props> = ({ onBack, onComplete }) => {
           setShowSkipButton(true);
         }
 
-        // AI语音播报评价和纠错
+        // 根据分数播放简短的语音反馈
         setTimeout(async () => {
           try {
-            await speakText(detailedFeedback.message, 'zh-CN');
-
-            // 如果有建议，也播报第一条建议
-            if (detailedFeedback.suggestions.length > 0) {
-              setTimeout(async () => {
-                await speakText(detailedFeedback.suggestions[0], 'zh-CN');
-              }, 1500);
+            const score = detailedFeedback.score;
+            if (score >= 80) {
+              await speakText('真棒', 'zh-CN');
+            } else if (score < 60) {
+              await speakText('继续加油呀', 'zh-CN');
             }
+            // 60-79分不播放语音反馈
 
-            // 如果AI判断需要播放语音指导（每3次失败）
+            // 如果AI判断需要播放语音指导（每3次失败），播放跟读指导
             if (detailedFeedback.shouldPlayGuidance) {
               setTimeout(async () => {
                 try {
@@ -223,10 +228,10 @@ const WordConsolidation: React.FC<Props> = ({ onBack, onComplete }) => {
                 } catch (error) {
                   console.error('语音指导播放失败:', error);
                 }
-              }, 3000); // 在评价和建议后播放语音指导
+              }, 1500); // 在简短反馈后播放语音指导
             }
           } catch (error) {
-            console.error('AI评价语音播报失败:', error);
+            console.error('语音反馈播放失败:', error);
           }
         }, 500);
       }

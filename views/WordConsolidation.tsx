@@ -228,6 +228,9 @@ const WordConsolidation: React.FC<Props> = ({ onBack, onComplete }) => {
   // Skip functionality
   // 处理下一题
   const handleNextWord = () => {
+    // 停止当前正在播放的音频
+    stopSpeaking();
+
     const currentWord = WORDS_DATA[currentIndex];
 
     // 重置状态
@@ -251,6 +254,9 @@ const WordConsolidation: React.FC<Props> = ({ onBack, onComplete }) => {
   };
 
   const handleSkip = () => {
+    // 停止当前正在播放的音频
+    stopSpeaking();
+
     const currentWord = WORDS_DATA[currentIndex];
     setMistakes(prev => [...prev, currentWord.word]);
 

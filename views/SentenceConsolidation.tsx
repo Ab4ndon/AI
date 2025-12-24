@@ -152,6 +152,9 @@ const SentenceConsolidation: React.FC<Props> = ({ onBack, onComplete }) => {
     setTimeout(() => {
       setIsProcessing(false);
       if (isSuccess) {
+        // 停止当前正在播放的音频
+        stopSpeaking();
+
         // 重置重试计数
         setRetryCount(0);
         setShowSkipButton(false);
@@ -204,6 +207,9 @@ const SentenceConsolidation: React.FC<Props> = ({ onBack, onComplete }) => {
 
   // Skip functionality
   const handleSkip = () => {
+    // 停止当前正在播放的音频
+    stopSpeaking();
+
     const sentence = SENTENCES_DATA[currentIdx];
     setMistakes(prev => [...prev, sentence.text]);
 

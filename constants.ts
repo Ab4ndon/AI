@@ -1,6 +1,6 @@
 import { WordItem, SentenceItem, QuizItem, StorySegment } from './types';
 
-export const USER_NAME = "Tom";
+export const USER_NAME = "Mike";
 export const LESSON_TITLE = "Is it an umbrella?";
 
 // 单词数据 - 精心挑选的图片与单词含义准确对应

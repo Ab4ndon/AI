@@ -180,7 +180,7 @@ const TextReadingSummary: React.FC<Props> = ({
           goodCount={goodCount}
           needsImprovementCount={needsImprovementCount}
           totalItems={Math.max(totalSentences, 1)} // 至少显示1个项目
-          userName="Tom"
+          userName="Mike"
           onBack={onCloseShare}
           onPlayRecording={(index) => {
             // 播放对应录音

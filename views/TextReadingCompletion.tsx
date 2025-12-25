@@ -156,7 +156,7 @@ const TextReadingCompletion: React.FC<Props> = ({
           goodCount={0}
           needsImprovementCount={0}
           totalItems={1}
-          userName="Tom"
+          userName="Mike"
           onBack={onCloseShare}
           onPlayRecording={(index) => {
             // 课文朗读可能没有录音回放

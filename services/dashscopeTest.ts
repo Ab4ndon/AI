@@ -4,9 +4,25 @@
 // @ts-ignore
 const DASHSCOPE_API_KEY = (import.meta as any).env?.VITE_DASHSCOPE_API_KEY;
 // @ts-ignore
-const DASHSCOPE_BASE_URL = (import.meta as any).env?.DEV
-  ? '/api/dashscope/api/v1'  // 开发环境使用代理
-  : '/api/dashscope-tts'; // 生产环境使用EdgeOne函数代理
+const getApiEndpoint = (): string => {
+  // @ts-ignore
+  if ((import.meta as any).env?.DEV) {
+    // 开发环境使用Vite代理
+    return '/api/dashscope/api/v1';
+  } else {
+    // 生产环境检查是否在EdgeOne上
+    const hostname = typeof window !== 'undefined' ? window.location.hostname : '';
+    if (hostname.includes('edgeone.cool')) {
+      // EdgeOne环境使用边缘函数代理
+      return '/dashscope-tts';
+    } else {
+      // 其他生产环境直接调用DashScope
+      return 'https://dashscope.aliyuncs.com/api/v1';
+    }
+  }
+};
+
+const DASHSCOPE_BASE_URL = getApiEndpoint();
 
 export const testDashScopeConnection = async (): Promise<boolean> => {
   console.log('Testing DashScope TTS connection...');

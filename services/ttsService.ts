@@ -1,8 +1,25 @@
 // DashScope TTS 配置
 const DASHSCOPE_API_KEY = import.meta.env.VITE_DASHSCOPE_API_KEY;
-const DASHSCOPE_BASE_URL = import.meta.env.DEV
-  ? '/api/dashscope/api/v1'  // 开发环境使用代理
-  : '/api/dashscope-tts'; // 生产环境使用EdgeOne函数代理
+
+// 根据环境选择不同的API调用方式
+const getApiEndpoint = (): string => {
+  if (import.meta.env.DEV) {
+    // 开发环境使用Vite代理
+    return '/api/dashscope/api/v1/services/aigc/multimodal-generation/generation';
+  } else {
+    // 生产环境检查是否在EdgeOne上
+    const hostname = typeof window !== 'undefined' ? window.location.hostname : '';
+    if (hostname.includes('edgeone.cool')) {
+      // EdgeOne环境使用边缘函数代理
+      return '/dashscope-tts';
+    } else {
+      // 其他生产环境直接调用DashScope（可能需要后端代理）
+      return 'https://dashscope.aliyuncs.com/api/v1/services/aigc/multimodal-generation/generation';
+    }
+  }
+};
+
+const API_ENDPOINT = getApiEndpoint();
 
 // 音色配置
 const VOICE_CONFIG = {
@@ -30,19 +47,29 @@ export const speakText = async (text: string, lang: string = 'zh-CN', userInitia
     };
 
     console.log('DashScope TTS Request:', {
-      url: `${DASHSCOPE_BASE_URL}/services/aigc/multimodal/generation`,
+      url: API_ENDPOINT,
       body: requestBody,
-      hasApiKey: !!DASHSCOPE_API_KEY
+      hasApiKey: !!DASHSCOPE_API_KEY,
+      environment: import.meta.env.DEV ? 'development' : 'production'
     });
 
-    // 使用正确的TTS endpoint
-    const response = await fetch(`${DASHSCOPE_BASE_URL}/services/aigc/multimodal-generation/generation`, {
+    // 构建请求头
+    const headers: Record<string, string> = {
+      'Content-Type': 'application/json'
+    };
+
+    // 只在直接调用DashScope API时添加Authorization头
+    // EdgeOne边缘函数会从环境变量获取API密钥
+    const hostname = typeof window !== 'undefined' ? window.location.hostname : '';
+    if (!hostname.includes('edgeone.cool')) {
+      headers['Authorization'] = `Bearer ${DASHSCOPE_API_KEY}`;
+      headers['X-DashScope-SSE'] = 'disable';
+    }
+
+    // 调用API（可能是直接调用或通过代理）
+    const response = await fetch(API_ENDPOINT, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${DASHSCOPE_API_KEY}`,
-        'X-DashScope-SSE': 'disable'
-      },
+      headers,
       body: JSON.stringify(requestBody)
     });
 

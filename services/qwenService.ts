@@ -44,10 +44,25 @@ const NETLIFY_FUNCTIONS_BASE = import.meta.env.DEV
   ? '/.netlify/functions'  // 开发环境
   : '/.netlify/functions'; // 生产环境
 
-// DashScope API路径
-const BASE_URL = import.meta.env.DEV
-  ? '/api/dashscope/services/aigc/text-generation/generation'  // 开发环境使用代理
-  : '/api/dashscope-tts'; // 生产环境使用EdgeOne函数代理
+// 根据环境选择不同的API调用方式
+const getApiEndpoint = (): string => {
+  if (import.meta.env.DEV) {
+    // 开发环境使用Vite代理
+    return '/api/dashscope/services/aigc/text-generation/generation';
+  } else {
+    // 生产环境检查是否在EdgeOne上
+    const hostname = typeof window !== 'undefined' ? window.location.hostname : '';
+    if (hostname.includes('edgeone.cool')) {
+      // EdgeOne环境使用边缘函数代理
+      return '/dashscope-tts';
+    } else {
+      // 其他生产环境直接调用DashScope（可能需要后端代理）
+      return 'https://dashscope.aliyuncs.com/services/aigc/text-generation/generation';
+    }
+  }
+};
+
+const BASE_URL = getApiEndpoint();
 
 export const generateTeacherFeedback = async (
   context: string,
@@ -75,11 +90,19 @@ export const generateTeacherFeedback = async (
 
     const response = await fetch(BASE_URL, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${apiKey}`,
-        'X-DashScope-SSE': 'disable'
-      },
+      headers: (() => {
+        const headers: Record<string, string> = {
+          'Content-Type': 'application/json'
+        };
+        // 只在直接调用DashScope API时添加Authorization头
+        // EdgeOne边缘函数会从环境变量获取API密钥
+        const hostname = typeof window !== 'undefined' ? window.location.hostname : '';
+        if (!hostname.includes('edgeone.cool')) {
+          headers['Authorization'] = `Bearer ${apiKey}`;
+          headers['X-DashScope-SSE'] = 'disable';
+        }
+        return headers;
+      })(),
       body: JSON.stringify({
         model: modelId,
         input: {
@@ -213,11 +236,19 @@ export const generateDetailedFeedback = async (
 
     const response = await fetch(BASE_URL, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${apiKey}`,
-        'X-DashScope-SSE': 'disable'
-      },
+      headers: (() => {
+        const headers: Record<string, string> = {
+          'Content-Type': 'application/json'
+        };
+        // 只在直接调用DashScope API时添加Authorization头
+        // EdgeOne边缘函数会从环境变量获取API密钥
+        const hostname = typeof window !== 'undefined' ? window.location.hostname : '';
+        if (!hostname.includes('edgeone.cool')) {
+          headers['Authorization'] = `Bearer ${apiKey}`;
+          headers['X-DashScope-SSE'] = 'disable';
+        }
+        return headers;
+      })(),
       body: JSON.stringify({
         model: modelId,
         input: {

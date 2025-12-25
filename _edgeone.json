@@ -3,8 +3,8 @@
   "functions": {
     "dashscope-tts": {
       "runtime": "edge",
-      "path": "/api/dashscope-tts",
-      "file": "edge-functions/dashscope-tts/index.js",
+      "routes": ["/api/dashscope-tts"],
+      "file": "functions/dashscope-tts/index.js",
       "env": {
         "DASHSCOPE_API_KEY": "{{DASHSCOPE_API_KEY}}"
       }
@@ -13,15 +13,5 @@
   "build": {
     "command": "npm run build",
     "outputDir": "dist"
-  },
-  "routes": [
-    {
-      "pattern": "/api/dashscope-tts",
-      "function": "dashscope-tts"
-    },
-    {
-      "pattern": "/api/dashscope-tts/*",
-      "function": "dashscope-tts"
-    }
-  ]
+  }
 }

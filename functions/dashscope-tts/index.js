@@ -1,5 +1,4 @@
-// EdgeOne Pages Functions: Universal DashScope API Proxy
-// Handles TTS, text generation, and other DashScope API calls
+// EdgeOne Pages Functions: DashScope TTS API Proxy
 // Solves CORS issues when calling DashScope API from frontend
 
 export async function onRequest(context) {
@@ -35,13 +34,20 @@ export async function onRequest(context) {
   }
 
   try {
+    console.log('EdgeOne function called with method:', request.method);
+    console.log('EdgeOne function URL:', request.url);
+
     // Get API key from EdgeOne environment variables
     const apiKey = env.DASHSCOPE_API_KEY;
+    console.log('EdgeOne API key configured:', !!apiKey, 'Key starts with:', apiKey ? apiKey.substring(0, 10) + '...' : 'null');
+
     if (!apiKey) {
       console.error('DASHSCOPE_API_KEY not configured in EdgeOne environment');
+      console.error('Please set DASHSCOPE_API_KEY in EdgeOne console environment variables');
+      console.error('Both VITE_DASHSCOPE_API_KEY and DASHSCOPE_API_KEY need to be set');
       return new Response(JSON.stringify({
         error: 'API key not configured',
-        details: 'Please set DASHSCOPE_API_KEY in EdgeOne environment variables'
+        details: 'Please set DASHSCOPE_API_KEY in EdgeOne environment variables. Make sure to set both VITE_DASHSCOPE_API_KEY and DASHSCOPE_API_KEY in EdgeOne console.'
       }), {
         status: 500,
         headers: {
@@ -75,6 +81,7 @@ export async function onRequest(context) {
 
     console.log('Using DashScope URL:', dashscopeUrl);
 
+    // Call DashScope API
     const dashscopeResponse = await fetch(dashscopeUrl, {
       method: 'POST',
       headers: {

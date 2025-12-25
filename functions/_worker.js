@@ -3,19 +3,26 @@
 
 export default {
   async fetch(request, env, ctx) {
+    const url = new URL(request.url);
 
-  // Handle CORS preflight requests
-  if (request.method === 'OPTIONS') {
-    return new Response(null, {
-      status: 200,
-      headers: {
-        'Access-Control-Allow-Origin': '*',
-        'Access-Control-Allow-Methods': 'POST, OPTIONS',
-        'Access-Control-Allow-Headers': 'Content-Type, Authorization',
-        'Access-Control-Max-Age': '86400'
-      }
-    });
-  }
+    // Only handle /api/dashscope-tts requests
+    if (url.pathname !== '/api/dashscope-tts') {
+      // For other paths, return a 404 or pass through to static files
+      return new Response('Not Found', { status: 404 });
+    }
+
+    // Handle CORS preflight requests
+    if (request.method === 'OPTIONS') {
+      return new Response(null, {
+        status: 200,
+        headers: {
+          'Access-Control-Allow-Origin': '*',
+          'Access-Control-Allow-Methods': 'POST, OPTIONS',
+          'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+          'Access-Control-Max-Age': '86400'
+        }
+      });
+    }
 
   // Only allow POST requests
   if (request.method !== 'POST') {

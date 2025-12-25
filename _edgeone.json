@@ -1,15 +1,5 @@
 {
   "name": "myenglishai",
-  "functions": {
-    "dashscope-tts": {
-      "runtime": "edge",
-      "routes": ["/api/dashscope-tts"],
-      "file": "functions/dashscope-tts/index.js",
-      "env": {
-        "DASHSCOPE_API_KEY": "{{DASHSCOPE_API_KEY}}"
-      }
-    }
-  },
   "build": {
     "command": "npm run build",
     "outputDir": "dist"

@@ -3,21 +3,32 @@ const DASHSCOPE_API_KEY = import.meta.env.VITE_DASHSCOPE_API_KEY;
 
 // 根据环境选择不同的API调用方式
 const getApiEndpoint = (): string => {
+  console.log('TTS Service - Environment check:', {
+    DEV: import.meta.env.DEV,
+    MODE: import.meta.env.MODE,
+    PROD: import.meta.env.PROD
+  });
+
   if (import.meta.env.DEV) {
     // 开发环境使用Vite代理
+    console.log('TTS Service - Using development endpoint');
     return '/api/dashscope/api/v1/services/aigc/multimodal-generation/generation';
   } else {
     // 生产环境检查是否在EdgeOne上
     const hostname = typeof window !== 'undefined' ? window.location.hostname : '';
-    console.log('TTS Service - Hostname check:', { hostname, isEdgeOne: hostname.includes('edgeone.cool') });
-    if (hostname.includes('edgeone.cool')) {
+    const isEdgeOne = hostname.includes('edgeone.cool');
+    console.log('TTS Service - Hostname check:', { hostname, isEdgeOne });
+
+    if (isEdgeOne) {
       // EdgeOne环境使用边缘函数代理
       const endpoint = '/api/dashscope-tts';
       console.log('TTS Service - Using EdgeOne endpoint:', endpoint);
       return endpoint;
     } else {
       // 其他生产环境直接调用DashScope（可能需要后端代理）
-      return 'https://dashscope.aliyuncs.com/api/v1/services/aigc/multimodal-generation/generation';
+      const endpoint = 'https://dashscope.aliyuncs.com/api/v1/services/aigc/multimodal-generation/generation';
+      console.log('TTS Service - Using direct DashScope endpoint:', endpoint);
+      return endpoint;
     }
   }
 };

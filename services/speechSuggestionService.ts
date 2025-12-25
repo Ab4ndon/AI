@@ -61,7 +61,7 @@ export const generateSpeechSuggestions = async (
       const apiKey = import.meta.env.VITE_DASHSCOPE_API_KEY;
       const BASE_URL = import.meta.env.DEV
         ? '/api/dashscope/api/v1/services/aigc/text-generation/generation'  // 开发环境使用代理
-        : '/.netlify/functions/dashscope-tts'; // 生产环境使用EdgeOne函数代理
+        : '/api/dashscope-tts'; // 生产环境使用EdgeOne函数代理
       
       const prompt = `You are an English pronunciation teacher. A student tried to say "${expectedText}" but said "${evaluationResult.userTranscript}" instead. The score is ${evaluationResult.score}/100. Give 2-3 specific, encouraging pronunciation tips in Chinese (max 20 words each). Focus on what to improve.`;
 

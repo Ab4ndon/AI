@@ -9,9 +9,12 @@ const getApiEndpoint = (): string => {
   } else {
     // 生产环境检查是否在EdgeOne上
     const hostname = typeof window !== 'undefined' ? window.location.hostname : '';
+    console.log('TTS Service - Hostname check:', { hostname, isEdgeOne: hostname.includes('edgeone.cool') });
     if (hostname.includes('edgeone.cool')) {
       // EdgeOne环境使用边缘函数代理
-      return '/api/dashscope-tts';
+      const endpoint = '/api/dashscope-tts';
+      console.log('TTS Service - Using EdgeOne endpoint:', endpoint);
+      return endpoint;
     } else {
       // 其他生产环境直接调用DashScope（可能需要后端代理）
       return 'https://dashscope.aliyuncs.com/api/v1/services/aigc/multimodal-generation/generation';

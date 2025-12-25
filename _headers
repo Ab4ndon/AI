@@ -2,7 +2,7 @@
 # 这个文件告诉EdgeOne如何处理路由和函数
 # 允许所有跨域请求到边缘函数
 
-/dashscope-tts/*
+/api/dashscope-tts/*
   Access-Control-Allow-Origin: *
   Access-Control-Allow-Methods: POST, OPTIONS
   Access-Control-Allow-Headers: Content-Type, Authorization

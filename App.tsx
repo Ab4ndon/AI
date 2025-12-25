@@ -8,6 +8,7 @@ import TextReadingSummary from './views/TextReadingSummary';
 import TextReadingCompletion from './views/TextReadingCompletion';
 import Report from './views/Report';
 import { stopSpeaking } from './services/ttsService';
+import { WORDS_DATA, SENTENCES_DATA } from './constants';
 
 const App: React.FC = () => {
   const [view, setView] = useState<AppView>(AppView.HOME);
@@ -29,11 +30,11 @@ const App: React.FC = () => {
 
     // 更新统计数据
     if (viewId === AppView.WORDS) {
-      // 这里可以从 additionalData 中获取单词完成数量
-      setWordsCompleted(8); // 假设有8个单词
+      // 根据实际练习的单词数量更新
+      setWordsCompleted(WORDS_DATA.length);
     } else if (viewId === AppView.SENTENCES) {
-      // 这里可以从 additionalData 中获取句子完成数量
-      setSentencesCompleted(3); // 假设有3组句子
+      // 根据实际练习的句子数量更新
+      setSentencesCompleted(SENTENCES_DATA.length);
     } else if (viewId === AppView.TEXT) {
       console.log('处理TEXT模块完成，additionalData:', additionalData);
       if (additionalData && additionalData.segmentResults) {

@@ -86,7 +86,7 @@ const Report: React.FC<Props> = ({ onRestart, onFinish, onShare, showSharePoster
              </div>
              <div className="bg-purple-50 p-4 rounded-2xl flex flex-col items-center">
                 <Target className="text-purple-400 mb-2" />
-                <span className="text-2xl font-bold text-indigo-900">{stats.averageScore.toFixed(0)}%</span>
+                <span className="text-2xl font-bold text-indigo-900">{stats.averageScore.toFixed(0)}</span>
                 <span className="text-xs text-gray-500">平均分数</span>
              </div>
           </div>
@@ -126,7 +126,14 @@ const Report: React.FC<Props> = ({ onRestart, onFinish, onShare, showSharePoster
            <button onClick={onRestart} className="flex-1 bg-gradient-to-r from-blue-500 to-blue-600 text-white py-3 rounded-xl font-bold flex items-center justify-center gap-2">
              <RotateCcw size={18} /> 再学一遍
            </button>
-           <button onClick={onFinish} className="flex-1 bg-gradient-to-r from-purple-500 to-pink-500 text-white py-3 rounded-xl font-bold flex items-center justify-center gap-2">
+           <button onClick={async () => {
+             try {
+               await speakText('恭喜你完成了所有练习，我们下次再见！', 'zh-CN');
+             } catch (error) {
+               console.error('结束语音播放失败:', error);
+             }
+             onFinish();
+           }} className="flex-1 bg-gradient-to-r from-purple-500 to-pink-500 text-white py-3 rounded-xl font-bold flex items-center justify-center gap-2">
              结束复习
            </button>
         </div>
@@ -156,7 +163,7 @@ const Report: React.FC<Props> = ({ onRestart, onFinish, onShare, showSharePoster
                 <div className="bg-purple-50 p-4 rounded-2xl flex flex-col items-center">
                   <Target className="text-purple-400 mb-2" size={24} />
                   <span className="text-2xl font-bold text-indigo-900 mb-1">
-                    {stats.averageScore.toFixed(0)}%
+                    {stats.averageScore.toFixed(0)}
                   </span>
                   <span className="text-sm text-gray-500">平均分数</span>
                 </div>

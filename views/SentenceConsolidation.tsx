@@ -5,8 +5,10 @@ import SpeechBubble from '../components/SpeechBubble';
 import AudioButton from '../components/AudioButton';
 import AudioPlayback from '../components/AudioPlayback';
 import SharePoster from '../components/SharePoster';
+import StarEffect from '../components/StarEffect';
 import { generateDetailedFeedback } from '../services/qwenService';
 import { speakText, speakSimpleText, stopSpeaking } from '../services/ttsService';
+import { playSoundEffect } from '../services/soundEffectService';
 import { ArrowLeft, Check, X, Volume2 } from 'lucide-react';
 
 interface Props {
@@ -126,6 +128,7 @@ const SentenceConsolidation: React.FC<Props> = ({ onBack, onComplete }) => {
 
   // Game state
   const [gameResult, setGameResult] = useState<'correct' | 'wrong' | null>(null);
+  const [showStarEffect, setShowStarEffect] = useState(false);
 
   // 监听状态变化，停止音频播放
   useEffect(() => {
@@ -308,17 +311,23 @@ const SentenceConsolidation: React.FC<Props> = ({ onBack, onComplete }) => {
     const isCorrect = choice === item.correctAnswer;
 
     if (isCorrect) {
+      // 播放正确音效并显示星星特效
+      playSoundEffect('success');
+      setShowStarEffect(true);
       setGameResult('correct');
       setTeacherMsg("答对了！");
       setTimeout(() => {
+        setShowStarEffect(false);
         setGameResult(null);
         if (currentIdx < QUIZ_DATA.length - 1) {
           setCurrentIdx(prev => prev + 1);
         } else {
           onComplete(mistakes);
         }
-      }, 1200);
+      }, 1500); // 延长等待时间给星星特效
     } else {
+      // 播放错误音效
+      playSoundEffect('error');
       setGameResult('wrong');
       setTeacherMsg("再想想看！看看图片。");
       setTimeout(() => setGameResult(null), 1000);
@@ -557,11 +566,18 @@ const SentenceConsolidation: React.FC<Props> = ({ onBack, onComplete }) => {
       }
     };
 
-    const handleGoToGame = () => {
+    const handleGoToGame = async () => {
       // 进入看图选词游戏阶段
       setStep(3);
       setCurrentIdx(0);
       setTeacherMsg("");
+
+      // 播放进入游戏的语音
+      try {
+        await speakText("现在开始看图选句子游戏！请选择正确的句子描述图片吧！", 'zh-CN');
+      } catch (error) {
+        console.error('进入游戏语音播放失败:', error);
+      }
     };
 
     return (
@@ -886,7 +902,7 @@ const SentenceConsolidation: React.FC<Props> = ({ onBack, onComplete }) => {
   const renderGame = () => {
     const item = QUIZ_DATA[currentIdx];
     return (
-      <div className="flex flex-col flex-1 p-4 items-center">
+      <div className="flex flex-col flex-1 p-4 items-center relative">
          <div className="glass-card p-3 rounded-2xl w-full max-w-sm mb-6 relative overflow-hidden card-shadow">
             <img src={item.imageUrl} alt="Quiz" className="w-full h-48 object-cover rounded-xl" />
             <div className="mt-4 p-2 text-center">
@@ -921,6 +937,9 @@ const SentenceConsolidation: React.FC<Props> = ({ onBack, onComplete }) => {
              {item.options && <div className="text-sm text-purple-700 mt-1">{item.options[1]}</div>}
            </button>
          </div>
+
+        {/* 星星特效 */}
+        <StarEffect show={showStarEffect} />
       </div>
     );
   };

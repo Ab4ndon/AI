@@ -186,7 +186,20 @@ const AudioPlayback: React.FC<AudioPlaybackProps> = ({
         <div className="flex-1">
           <p className="text-sm font-semibold text-indigo-900">回听你的发音</p>
         </div>
-        <Volume2 className="text-indigo-400" size={20} />
+        <div className="flex items-center gap-2">
+          {evaluationScore !== undefined && (
+            <div className={`px-2 py-1 rounded-full text-xs font-bold ${
+              evaluationScore >= 80
+                ? 'bg-green-500 text-white'
+                : evaluationScore >= 60
+                ? 'bg-yellow-500 text-white'
+                : 'bg-red-500 text-white'
+            }`}>
+              {evaluationScore}分
+            </div>
+          )}
+          <Volume2 className="text-indigo-400" size={20} />
+        </div>
       </div>
 
     </div>

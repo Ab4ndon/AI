@@ -13,7 +13,7 @@ interface HomeProps {
 }
 
 const Home: React.FC<HomeProps> = ({ onChangeView, completedModules, returningFromModule, onGoToReport }) => {
-  const [greeting, setGreeting] = useState(`${USER_NAME}，下课回来啦！Bella看到你完成了'秋季第一讲'的学习，真棒！让我们一起来巩固今天学的内容吧。我们从'单词巩固'开始！`);
+  const [greeting, setGreeting] = useState(`${USER_NAME}，下课回来啦！我们一起巩固今天学的'Is it an umbrella?'吧！`);
   const [showSummary, setShowSummary] = useState(false);
   const [showModules, setShowModules] = useState(false);
   const [currentStep, setCurrentStep] = useState(0); // 0: greeting, 1: summary, 2: modules
@@ -90,7 +90,7 @@ const Home: React.FC<HomeProps> = ({ onChangeView, completedModules, returningFr
   // 初始化首页状态和语音
   useEffect(() => {
     // 重置所有状态
-    setGreeting(`${USER_NAME}，下课回来啦！Bella看到你完成了'秋季第一讲'的学习，真棒！让我们一起来巩固今天学的内容吧。我们从'单词巩固'开始！`);
+    setGreeting(`${USER_NAME}，下课回来啦！我们一起巩固今天学的'Is it an umbrella?'吧！`);
     setShowSummary(false);
     setShowModules(false);
     setCurrentStep(0);
@@ -141,7 +141,7 @@ const Home: React.FC<HomeProps> = ({ onChangeView, completedModules, returningFr
       // 默认情况：首次进入首页或没有上下文，播放欢迎语音
       const timeout3 = setTimeout(() => {
         if (!userInteracted) { // 只在用户未交互时播放
-          playVoiceWithFallback(`${USER_NAME}，下课回来啦！Bella看到你完成了'秋季第一讲'的学习，真棒！让我们一起来巩固今天学的内容吧。我们从'单词巩固'开始！`);
+          playVoiceWithFallback(`${USER_NAME}，下课回来啦！我们一起巩固今天学的'Is it an umbrella?'吧！`);
         }
       }, 500);
       timeouts.push(timeout3);

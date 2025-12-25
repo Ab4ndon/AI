@@ -1,107 +1,268 @@
 <div align="center">
-<img width="1200" height="475" alt="GHBanner" src="https://github.com/user-attachments/assets/0aa67016-6eaf-458a-adb2-6e31a0763ed6" />
+<img width="1200" height="475" alt="AI English Teacher Banner" src="https://github.com/user-attachments/assets/0aa67016-6eaf-458a-adb2-6e31a0763ed6" />
 </div>
 
-# Run and deploy your AI Studio app
+# 🤖 AI English Teacher - 智能英语学习应用
 
-This contains everything you need to run your app locally.
+一个基于AI的英语学习应用，集成了语音识别、AI教师评价、语音合成等先进技术，为用户提供个性化的英语学习体验。
 
-View your app in AI Studio: https://ai.studio/apps/drive/17SBNHprxzizMO8eSZUt_UQX0KhbC0k-e
+## ✨ 核心功能
 
-## Run Locally
+- 🎤 **智能语音识别**: 实时语音识别用户发音
+- 🧠 **AI教师评价**: 基于Qwen模型的个性化学习反馈
+- 🔊 **高质量语音合成**: DashScope TTS提供自然语音指导
+- 📊 **学习进度追踪**: 详细的学习报告和数据分析
+- 🎯 **游戏化学习**: 互动练习提升学习兴趣
+- 🌐 **多环境部署**: 支持本地开发和云端部署
 
-**Prerequisites:**  Node.js
+## 🛠️ 技术栈
 
+### 前端技术栈
+- **React 19.2.3** - 现代React框架
+- **TypeScript 5.8.2** - 类型安全的JavaScript
+- **Vite 6.2.0** - 快速的构建工具
+- **Tailwind CSS** - 原子化CSS框架
+- **Lucide React** - 精美图标库
 
-1. Install dependencies:
-   `npm install`
-2. Configure DashScope API (推荐，用于高质量语音合成):
-   - 获取API Key：https://help.aliyun.com/zh/model-studio/get-api-key
-   - 在项目根目录创建 `.env` 文件：
-     ```
-     VITE_DASHSCOPE_API_KEY=your_actual_api_key_here
-     ```
-   - 如果不配置API Key，系统会自动使用浏览器内置的语音合成
+### AI & 语音技术栈
+- **阿里云DashScope** - 大语言模型和语音服务
+  - Qwen-turbo - 文本生成和AI评价
+  - qwen3-tts-flash - 高质量语音合成
+- **Web Speech API** - 浏览器原生语音识别
+- **Web Audio API** - 音频处理和格式转换
 
-3. Run the app:
-   `npm run dev`
+### 后端 & 部署
+- **腾讯云EdgeOne** - 全球CDN和边缘计算
+- **Netlify Functions** - Serverless函数（备选）
+- **Docker** - 容器化部署支持
 
-## 语音功能说明
+## 🚀 快速开始
 
-本应用集成了DashScope的高质量TTS服务，提供更自然、专业的语音体验：
+### 系统要求
 
-- **中文语音**：使用Cherry音色，亲切自然
-- **英文语音**：使用Alex音色，标准发音
-- **自动降级**：API不可用时自动使用浏览器Web Speech API
-- **实时反馈**：发音练习时提供即时语音指导
+- **Node.js** >= 18.0.0
+- **npm** 或 **yarn** 包管理器
+- **现代浏览器** (Chrome 88+, Firefox 85+, Safari 14+, Edge 88+)
 
-### CORS解决方案
+### 1. 克隆项目
 
-开发环境中可能遇到CORS错误，应用已配置Vite代理服务器自动解决此问题。
+```bash
+git clone https://github.com/Ab4ndon/AI.git
+cd AI
+```
 
-### 语音功能诊断
+### 2. 安装依赖
 
-如果遇到语音功能问题，请按以下步骤诊断：
+```bash
+npm install
+```
 
-1. **检查API Key配置**：
-   ```bash
-   node debug-api.js
-   ```
+### 3. ⚠️ 重要：配置API Key
 
-2. **测试API连接**：
-   ```bash
-   # 在浏览器控制台中运行
-   import('./services/dashscopeTest.ts').then(m => m.testDashScopeConnection())
-   ```
+**本应用的核心功能依赖DashScope API Key，请务必正确配置！**
 
-3. **常见问题**：
-   - **400错误**：API Key无效或参数格式错误
-   - **CORS错误**：代理配置问题（已自动解决）
-   - **403错误**：API Key权限不足
+#### 获取API Key
+访问 [阿里云DashScope控制台](https://help.aliyun.com/zh/model-studio/get-api-key) 获取API Key
 
-如需测试语音功能，请确保配置了有效的DashScope API Key。
+#### 配置环境变量
+在项目根目录创建 `.env.local` 文件：
 
-## 部署到EdgeOne
+```bash
+# DashScope API配置 - 必须配置，否则AI评价和语音功能将无法使用
+VITE_DASHSCOPE_API_KEY=sk-xxxxxxxxxxxxxxxxxx
 
-本项目支持一键部署到腾讯云EdgeOne，提供全球CDN加速和边缘计算服务。
+# 注意：
+# 1. 替换为您的真实API Key（以sk-开头）
+# 2. 不要将此文件提交到版本控制系统
+# 3. API Key泄露可能导致费用损失，请妥善保管
+```
 
-### 部署步骤
+#### 验证配置
 
-1. **登录腾讯云控制台**：
+运行环境检查脚本：
+
+```bash
+# 检查API Key配置是否正确
+node check-env.js
+
+# 测试API连接（可选）
+npm run test:tts
+```
+
+### 4. 启动开发服务器
+
+```bash
+npm run dev
+```
+
+应用将在 `http://localhost:3000` 启动。
+
+## 🎯 使用指南
+
+### 学习流程
+1. **单词巩固** - 看图识词 + 语音练习
+2. **句型巩固** - 句子朗读 + 专项练习
+3. **课文朗读** - 分段阅读 + 理解测试
+4. **学习报告** - 查看学习成果和建议
+
+### 语音功能说明
+
+- **AI教师语音**: 使用Cherry音色提供中文指导
+- **发音示范**: 使用Alex音色展示标准英文发音
+- **自动降级**: API不可用时使用浏览器内置语音
+- **实时反馈**: 练习时提供即时语音评价
+
+## 🌐 部署方式
+
+### 方式一：腾讯云EdgeOne（推荐）
+
+**适合生产环境，提供全球CDN加速**
+
+#### 部署步骤
+
+1. **登录腾讯云控制台**
    - 访问 [EdgeOne控制台](https://console.cloud.tencent.com/edgeone)
-   - 点击"创建应用"
-   - 选择"Pages"部署方式
-   - 连接GitHub仓库：`https://github.com/Ab4ndon/AI.git`
+   - 创建新应用，选择"Pages"部署方式
 
-2. **配置环境变量**：
-   - 在EdgeOne控制台的环境变量设置中添加：
-     ```
-     VITE_DASHSCOPE_API_KEY=your_dashscope_api_key_here
-     DASHSCOPE_API_KEY=your_dashscope_api_key_here
-     ```
-   - 注意：需要同时设置两个变量，前端和边缘函数各用一个
+2. **连接代码仓库**
+   - GitHub仓库: `https://github.com/Ab4ndon/AI.git`
+   - 自动识别部署配置
 
-3. **配置边缘函数**：
-   - EdgeOne会自动识别 `edge-functions/` 目录中的函数
-   - 边缘函数用于代理DashScope API请求，解决CORS问题
+3. **⚠️ 配置环境变量（重要！）**
+   ```bash
+   # 前端环境变量
+   VITE_DASHSCOPE_API_KEY=sk-xxxxxxxxxxxxxxxxxx
 
-4. **部署应用**：
-   - 保存配置后，EdgeOne会自动构建和部署
-   - 部署完成后获得类似 `https://xxx.edgeone.cool` 的域名
+   # 边缘函数环境变量
+   DASHSCOPE_API_KEY=sk-xxxxxxxxxxxxxxxxxx
+   ```
+   **注意**: 必须同时配置两个变量，前端和边缘函数各用一个
 
-### EdgeOne特性
+4. **部署应用**
+   - EdgeOne自动构建和部署
+   - 获得 `https://xxx.edgeone.cool` 域名
 
-- ✅ **全球CDN加速**：就近访问，提升用户体验
-- ✅ **边缘函数代理**：自动解决CORS跨域问题
-- ✅ **自动HTTPS**：免费SSL证书
-- ✅ **GitHub集成**：代码变更自动触发重新部署
+#### EdgeOne优势
+- ✅ 全球CDN加速，提升访问速度
+- ✅ 边缘函数自动解决CORS问题
+- ✅ 免费HTTPS证书
+- ✅ GitHub集成，自动重新部署
 
-### 故障排除
+### 方式二：Netlify部署
 
-如果部署后语音功能仍然不工作：
+```bash
+# 构建生产版本
+npm run build
 
-1. **检查环境变量**：确保两个API Key都已正确配置
-2. **查看函数日志**：在EdgeOne控制台查看边缘函数运行日志
-3. **检查网络连接**：确认EdgeOne能够访问DashScope API
+# 部署到Netlify
+# 在Netlify控制台导入构建好的dist目录
+# 配置环境变量：VITE_DASHSCOPE_API_KEY
+```
 
-EdgeOne部署完成后，应用将获得更好的性能和稳定性！
+### 方式三：Docker部署
+
+```bash
+# 构建Docker镜像
+npm run deploy:docker
+
+# 或使用docker-compose
+docker-compose up -d
+```
+
+## 🔧 故障排除
+
+### API相关问题
+
+**401 Unauthorized**
+```
+原因：API Key未配置或无效
+解决：检查.env.local文件，确保API Key正确
+```
+
+**400 Bad Request**
+```
+原因：API参数错误
+解决：检查API Key格式（应以sk-开头）
+```
+
+**CORS错误**
+```
+原因：跨域请求被阻止
+解决：开发环境已自动配置代理；生产环境使用EdgeOne
+```
+
+### 语音功能问题
+
+**无声音输出**
+```bash
+# 检查API配置
+node check-env.js
+
+# 测试语音服务
+npm run test:tts
+```
+
+**浏览器兼容性**
+- Chrome/Edge: 完全支持
+- Firefox/Safari: 部分功能支持
+- 移动端: 建议使用Chrome
+
+### 部署问题
+
+**EdgeOne部署失败**
+- 检查环境变量配置
+- 查看EdgeOne控制台日志
+- 确认GitHub仓库权限
+
+**构建失败**
+```bash
+# 清理缓存重新构建
+npm run clean
+npm install
+npm run build
+```
+
+## 📚 项目结构
+
+```
+├── components/          # React组件
+│   ├── AudioButton.tsx     # 录音按钮组件
+│   ├── AudioPlayback.tsx   # 音频播放组件
+│   ├── SpeechBubble.tsx    # 对话气泡
+│   └── TeacherAvatar.tsx   # 教师头像
+├── services/           # 业务服务层
+│   ├── qwenService.ts      # AI评价服务
+│   ├── ttsService.ts       # 语音合成服务
+│   ├── speechRecognitionService.ts  # 语音识别
+│   └── soundEffectService.ts        # 音效服务
+├── views/              # 页面视图
+│   ├── Home.tsx           # 首页
+│   ├── WordConsolidation.tsx    # 单词巩固
+│   ├── SentenceConsolidation.tsx # 句子巩固
+│   └── Report.tsx         # 学习报告
+├── edge-functions/     # 腾讯云边缘函数
+├── functions/          # Netlify函数
+└── scripts/            # 部署和工具脚本
+```
+
+## 🤝 贡献指南
+
+1. Fork 本仓库
+2. 创建特性分支 (`git checkout -b feature/AmazingFeature`)
+3. 提交更改 (`git commit -m 'Add some AmazingFeature'`)
+4. 推送到分支 (`git push origin feature/AmazingFeature`)
+5. 开启 Pull Request
+
+## 📄 许可证
+
+本项目采用 MIT 许可证 - 查看 [LICENSE](LICENSE) 文件了解详情
+
+## 📞 技术支持
+
+- 📧 邮箱: your-email@example.com
+- 🐛 问题反馈: [GitHub Issues](https://github.com/Ab4ndon/AI/issues)
+- 📖 文档: [项目Wiki](https://github.com/Ab4ndon/AI/wiki)
+
+---
+
+**重要提醒**: 请确保妥善保管您的DashScope API Key，避免泄露导致不必要的费用损失。如有任何技术问题，请查看故障排除部分或提交Issue。

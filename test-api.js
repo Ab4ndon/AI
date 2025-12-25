@@ -1,17 +1,22 @@
-// 测试EdgeOne API端点
-// 用于验证/api/dashscope-tts是否正常工作
+// 测试DashScope API端点
+// 用于验证直接调用DashScope TTS API是否正常工作
 
-const API_URL = 'https://myenglishai-i8fyjly4.edgeone.cool/api/dashscope-tts';
+const API_URL = 'https://dashscope.aliyuncs.com/api/v1/services/aigc/multimodal-generation/generation';
 
 async function testAPI() {
-  console.log('🧪 测试EdgeOne API端点...');
+  console.log('🧪 测试DashScope API端点...');
   console.log('📡 请求URL:', API_URL);
+
+  // 获取API密钥（从环境变量或直接设置）
+  const apiKey = process.env.DASHSCOPE_API_KEY || 'your_api_key_here';
 
   try {
     const response = await fetch(API_URL, {
       method: 'POST',
       headers: {
-        'Content-Type': 'application/json'
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${apiKey}`,
+        'X-DashScope-SSE': 'disable'
       },
       body: JSON.stringify({
         model: 'qwen3-tts-flash',

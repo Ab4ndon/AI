@@ -11,7 +11,7 @@ const getApiEndpoint = (): string => {
     const hostname = typeof window !== 'undefined' ? window.location.hostname : '';
     if (hostname.includes('edgeone.cool')) {
       // EdgeOne环境使用边缘函数代理
-      return '/dashscope-tts';
+      return '/api/dashscope-tts';
     } else {
       // 其他生产环境直接调用DashScope（可能需要后端代理）
       return 'https://dashscope.aliyuncs.com/api/v1/services/aigc/multimodal-generation/generation';

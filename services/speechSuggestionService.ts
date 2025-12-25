@@ -69,7 +69,7 @@ export const generateSpeechSuggestions = async (
           const hostname = typeof window !== 'undefined' ? window.location.hostname : '';
           if (hostname.includes('edgeone.cool')) {
             // EdgeOne环境使用边缘函数代理
-            return '/dashscope-tts';
+            return '/api/dashscope-tts';
           } else {
             // 其他生产环境直接调用DashScope（可能需要后端代理）
             return 'https://dashscope.aliyuncs.com/api/v1/services/aigc/text-generation/generation';
@@ -88,7 +88,7 @@ export const generateSpeechSuggestions = async (
 
       // 只在直接调用DashScope API时添加Authorization头
       // EdgeOne边缘函数会从环境变量获取API密钥
-      if (!BASE_URL.includes('/dashscope-tts')) {
+      if (!BASE_URL.includes('/api/dashscope-tts')) {
         headers['Authorization'] = `Bearer ${apiKey}`;
         headers['X-DashScope-SSE'] = 'disable';
       }

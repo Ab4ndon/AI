@@ -3,7 +3,7 @@
   "functions": {
     "dashscope-tts": {
       "runtime": "edge",
-      "path": "/dashscope-tts",
+      "path": "/api/dashscope-tts",
       "file": "edge-functions/dashscope-tts/index.js",
       "env": {
         "DASHSCOPE_API_KEY": "{{DASHSCOPE_API_KEY}}"
@@ -16,7 +16,7 @@
   },
   "routes": [
     {
-      "pattern": "/dashscope-tts",
+      "pattern": "/api/dashscope-tts",
       "function": "dashscope-tts"
     }
   ]

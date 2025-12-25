@@ -23,8 +23,13 @@ export async function onRequest(context) {
   }
 
   try {
+    console.log('EdgeOne function called with method:', request.method);
+    console.log('EdgeOne function URL:', request.url);
+
     // 获取API密钥 - 从EdgeOne环境变量获取
     const apiKey = env.DASHSCOPE_API_KEY;
+    console.log('EdgeOne API key configured:', !!apiKey);
+
     if (!apiKey) {
       console.error('DASHSCOPE_API_KEY not configured in EdgeOne environment');
       return new Response(JSON.stringify({

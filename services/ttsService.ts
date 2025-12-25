@@ -14,11 +14,18 @@ const getApiEndpoint = (): string => {
     console.log('TTS Service - Using development endpoint');
     return '/api/dashscope/api/v1/services/aigc/multimodal-generation/generation';
   } else {
-    // 生产环境检查是否在EdgeOne上
+    // 生产环境 - 优先使用EdgeOne代理
     const hostname = typeof window !== 'undefined' ? window.location.hostname : '';
-    const isEdgeOne = hostname.includes('edgeone.cool');
-    console.log('TTS Service - Hostname check:', { hostname, isEdgeOne });
+    const isEdgeOne = hostname.includes('edgeone.cool') || hostname.includes('edgeone');
+    console.log('TTS Service - Hostname check:', { hostname, isEdgeOne, fullUrl: typeof window !== 'undefined' ? window.location.href : 'no-window' });
 
+    // 强制使用EdgeOne代理（因为这是我们的部署环境）
+    const endpoint = '/api/dashscope-tts';
+    console.log('TTS Service - Using EdgeOne endpoint:', endpoint);
+    return endpoint;
+
+    // 保留备用逻辑（暂时注释掉）
+    /*
     if (isEdgeOne) {
       // EdgeOne环境使用边缘函数代理
       const endpoint = '/api/dashscope-tts';
@@ -30,6 +37,7 @@ const getApiEndpoint = (): string => {
       console.log('TTS Service - Using direct DashScope endpoint:', endpoint);
       return endpoint;
     }
+    */
   }
 };
 

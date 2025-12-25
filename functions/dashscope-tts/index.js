@@ -1,8 +1,8 @@
 // EdgeOne Pages Functions: DashScope TTS API Proxy
 // Solves CORS issues when calling DashScope API from frontend
 
-export async function onRequest(context) {
-  const { request, env } = context;
+export default {
+  async fetch(request, env, ctx) {
 
   // Handle CORS preflight requests
   if (request.method === 'OPTIONS') {

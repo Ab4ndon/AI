@@ -23,14 +23,25 @@ interface Props {
 const Report: React.FC<Props> = ({ onRestart, onFinish, onShare, showSharePoster, onCloseShare, stats }) => {
   // 页面加载时播放恭喜语音
   useEffect(() => {
+    let hasPlayed = false;
+
     const playCongrats = async () => {
+      if (hasPlayed) return; // 防止重复播放
+      hasPlayed = true;
+
       try {
         await speakText(`恭喜你${USER_NAME}，完成了今天的所有学习任务！来看看你今天的优秀表现吧！`, 'zh-CN');
       } catch (error) {
         console.error('恭喜语音播放失败:', error);
       }
     };
+
     playCongrats();
+
+    // 返回cleanup函数
+    return () => {
+      hasPlayed = true;
+    };
   }, []);
 
   return (

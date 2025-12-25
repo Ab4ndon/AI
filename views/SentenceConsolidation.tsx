@@ -138,7 +138,7 @@ const SentenceConsolidation: React.FC<Props> = ({ onBack, onComplete }) => {
   const startReading = () => {
     setStep(1);
     setCurrentIdx(0);
-    setTeacherMsg("让我们来朗读这些句子吧！");
+    setTeacherMsg("");
     setFeedbackMessage('');
     setShowNextButton(false);
   };

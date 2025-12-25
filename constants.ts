@@ -17,19 +17,11 @@ export const WORDS_DATA: WordItem[] = [
   { id: 'w5', word: 'vase', type: 'n.', meaning: '花瓶', imageUrl: 'https://aband0n.oss-cn-nanjing.aliyuncs.com/img/image-20251225022923745.png' },
   // window - 窗户，建筑的重要组成部分
   { id: 'w6', word: 'window', type: 'n.', meaning: '窗户', imageUrl: 'https://aband0n.oss-cn-nanjing.aliyuncs.com/img/image-20251225023341322.png' },
-  // pencil - 铅笔，学习和写作的必备工具
-  { id: 'w7', word: 'pencil', type: 'n.', meaning: '铅笔', imageUrl: 'https://images.unsplash.com/photo-1554224155-8d04cb21cd6c?w=200&h=200&fit=crop&crop=center' },
-  // book - 书，知识的载体
-  { id: 'w8', word: 'book', type: 'n.', meaning: '书', imageUrl: 'https://images.unsplash.com/photo-1544947950-fa07a98d237f?w=200&h=200&fit=crop&crop=center' },
 ];
 
 export const SENTENCES_DATA: SentenceItem[] = [
   { id: 's1', text: "Is it an umbrella? No, it isn't.", group: 1 },
   { id: 's2', text: "Is it a vase? Yes, it is.", group: 1 },
-  { id: 's3', text: "This is an umbrella. It's not a vase!", group: 2 },
-  { id: 's4', text: "I have an umbrella. I don't have a vase!", group: 2 },
-  { id: 's5', text: "Do you see the umbrella? Yes, I do.", group: 3 },
-  { id: 's6', text: "No, I don't. I see the vase.", group: 3 },
 ];
 
 export const GRAMMAR_CARDS = [

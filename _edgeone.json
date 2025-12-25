@@ -16,7 +16,11 @@
   },
   "routes": [
     {
-      "pattern": "/api/dashscope-tts*",
+      "pattern": "/api/dashscope-tts",
+      "function": "dashscope-tts"
+    },
+    {
+      "pattern": "/api/dashscope-tts/*",
       "function": "dashscope-tts"
     }
   ]

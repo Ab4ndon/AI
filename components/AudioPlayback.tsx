@@ -184,22 +184,7 @@ const AudioPlayback: React.FC<AudioPlaybackProps> = ({
           {isPlaying ? <Pause size={20} /> : <Play size={20} />}
         </button>
         <div className="flex-1">
-          <div className="flex items-center justify-between">
-            <p className="text-sm font-semibold text-indigo-900">回听你的发音</p>
-            {evaluationScore !== undefined && (
-              <div className="flex items-center gap-2">
-                <div className={`px-3 py-1 rounded-full text-sm font-bold shadow-md ${
-                  evaluationScore >= 80
-                    ? 'bg-green-500 text-white'
-                    : evaluationScore >= 60
-                    ? 'bg-yellow-500 text-white'
-                    : 'bg-red-500 text-white'
-                }`}>
-                  {evaluationScore}分
-                </div>
-              </div>
-            )}
-          </div>
+          <p className="text-sm font-semibold text-indigo-900">回听你的发音</p>
         </div>
         <Volume2 className="text-indigo-400" size={20} />
       </div>

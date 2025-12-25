@@ -96,7 +96,7 @@ const WordConsolidation: React.FC<Props> = ({ onBack, onComplete }) => {
   useEffect(() => {
     // 短暂延迟后尝试播放介绍词
     const timeout = setTimeout(() => {
-      playVoiceWithFallback(`欢迎来到单词巩固环节，${USER_NAME}！这里有8个精彩的单词等着你来挑战呢！`);
+      playVoiceWithFallback(`欢迎来到单词巩固环节，${USER_NAME}！这里有6个精彩的单词等着你来挑战呢！`);
     }, 500);
     return () => {
       clearTimeout(timeout);
@@ -274,7 +274,7 @@ const WordConsolidation: React.FC<Props> = ({ onBack, onComplete }) => {
         setPhase(Phase.QUIZ);
         setCurrentIndex(0);
         prepareQuiz(0);
-        setTeacherMsg("太棒了！单词部分完成了！现在我们来玩看图选词游戏吧！");
+        setTeacherMsg("太棒了！单词部分完成了！现在我们来玩看词选图游戏吧！");
       }
     } else if (phase === Phase.QUIZ) {
       // 测验阶段跳过
@@ -305,7 +305,7 @@ const WordConsolidation: React.FC<Props> = ({ onBack, onComplete }) => {
 
   // Completion Summary Logic
   const showCompletionSummary = async () => {
-    // 看图选词完成后，直接跳转到首页，不显示庆祝消息
+    // 看词选图完成后，直接跳转到首页，不显示庆祝消息
     // 这样首页会自动高亮巩固句型按钮
     onComplete(mistakes);
   };
@@ -337,7 +337,7 @@ const WordConsolidation: React.FC<Props> = ({ onBack, onComplete }) => {
     } else {
       // 播放错误音效
       playSoundEffect('wrong');
-      setTeacherMsg("不对哦，这是" + currentWord.word + "！");
+      setTeacherMsg(currentWord.word);
       // 记录错误
       setMistakes(prev => [...prev, currentWord.word]);
 
@@ -550,7 +550,7 @@ const WordConsolidation: React.FC<Props> = ({ onBack, onComplete }) => {
               // 练习后全对
               setTimeout(async () => {
                 try {
-                  await speakText("太棒了！现在所有单词的读音都掌握啦！我们去挑战看图选词吧！", 'zh-CN');
+                  await speakText("太棒了！现在所有单词的读音都掌握啦！我们去挑战看词选图吧！", 'zh-CN');
                   setTimeout(() => {
                     onComplete(mistakes);
                   }, 2000);
@@ -735,11 +735,11 @@ const WordConsolidation: React.FC<Props> = ({ onBack, onComplete }) => {
     };
 
     const handleGoToQuiz = () => {
-      // 进入看图选词游戏阶段
+      // 进入看词选图游戏阶段
       setPhase(Phase.QUIZ);
       setCurrentIndex(0);
       prepareQuiz(0);
-      setTeacherMsg("太棒了！现在让我们来玩看图选词游戏吧！");
+      setTeacherMsg("太棒了！现在让我们来玩看词选图游戏吧！");
     };
 
     return (
@@ -845,7 +845,7 @@ const WordConsolidation: React.FC<Props> = ({ onBack, onComplete }) => {
             onClick={handleGoToQuiz}
             className="flex-1 bg-gradient-to-r from-purple-500 to-pink-500 text-white py-3 px-6 rounded-2xl font-bold shadow-lg hover:shadow-xl transition-all active:scale-95"
           >
-            看图选词
+            看词选图
           </button>
         </div>
       </div>
@@ -880,9 +880,9 @@ const WordConsolidation: React.FC<Props> = ({ onBack, onComplete }) => {
     };
 
     const handleNextChallenge = () => {
-      // 进入看图选词游戏阶段
+      // 进入看词选图游戏阶段
       setPhase(Phase.QUIZ);
-      setTeacherMsg("太棒了！现在让我们来玩看图选词游戏吧！");
+      setTeacherMsg("太棒了！现在让我们来玩看词选图游戏吧！");
     };
 
     return (
@@ -983,7 +983,7 @@ const WordConsolidation: React.FC<Props> = ({ onBack, onComplete }) => {
             onClick={handleNextChallenge}
             className="flex-1 bg-gradient-to-r from-purple-500 to-pink-500 text-white py-3 px-6 rounded-2xl font-bold shadow-lg hover:shadow-xl transition-all active:scale-95"
           >
-            看图选词
+            看词选图
           </button>
         </div>
       </div>
@@ -1020,7 +1020,7 @@ const WordConsolidation: React.FC<Props> = ({ onBack, onComplete }) => {
     return (
       <div className="flex flex-col flex-1 p-4" onClick={handleUserInteraction}>
         <h3 className="text-center text-xl font-bold text-gray-900 mb-6">
-          哪个是 <span className="text-gray-900 text-2xl font-bold">"{word.word}"</span>？
+          <span className="text-gray-900 text-2xl font-bold">"{word.word}"</span>
         </h3>
         <div className="grid grid-cols-2 gap-4">
           {quizOptions.map(opt => {

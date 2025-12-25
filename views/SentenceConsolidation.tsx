@@ -17,7 +17,7 @@ interface Props {
 const SentenceConsolidation: React.FC<Props> = ({ onBack, onComplete }) => {
   const [step, setStep] = useState(0); // 0: Learn, 1: Read, 2: Practice, 3: Game, 4: Summary
   const [currentIdx, setCurrentIdx] = useState(0); // For sentences or quiz
-  const [teacherMsg, setTeacherMsg] = useState("今天我们要学习3个神奇的句型工具！");
+  const [teacherMsg, setTeacherMsg] = useState("今天我们要学习1个神奇的句型工具！");
   const [isProcessing, setIsProcessing] = useState(false);
   const [userInteracted, setUserInteracted] = useState(false);
   const [pendingVoices, setPendingVoices] = useState<string[]>([]);
@@ -76,7 +76,7 @@ const SentenceConsolidation: React.FC<Props> = ({ onBack, onComplete }) => {
   useEffect(() => {
     // 短暂延迟后尝试播放介绍词
     const timeout = setTimeout(() => {
-      playVoiceWithFallback(`欢迎来到句型巩固环节，${USER_NAME}！我们将通过学习和练习来掌握实用的句子结构！`);
+      playVoiceWithFallback(`欢迎来到句型巩固环节，${USER_NAME}！今天我们要学习1个神奇的句型工具！`);
     }, 500);
     return () => {
       clearTimeout(timeout);
@@ -248,7 +248,7 @@ const SentenceConsolidation: React.FC<Props> = ({ onBack, onComplete }) => {
     // AI语音提示
     setTimeout(async () => {
       try {
-        await speakText("好的，让我们去看图选词吧！", 'zh-CN');
+        await speakText("好的，让我们去看词选图吧！", 'zh-CN');
       } catch (error) {
         console.error('AI语音提示失败:', error);
       }
@@ -508,7 +508,7 @@ const SentenceConsolidation: React.FC<Props> = ({ onBack, onComplete }) => {
                 : 'w-full bg-green-500 text-white hover:bg-green-600'
             }`}
           >
-            看图选词
+            看词选图
           </button>
         </div>
       </div>
@@ -558,7 +558,7 @@ const SentenceConsolidation: React.FC<Props> = ({ onBack, onComplete }) => {
       // 进入看图选词游戏阶段
       setStep(3);
       setCurrentIdx(0);
-      setTeacherMsg("太棒了！现在让我们来玩看图选词游戏吧！");
+      setTeacherMsg("");
     };
 
     return (
@@ -664,7 +664,7 @@ const SentenceConsolidation: React.FC<Props> = ({ onBack, onComplete }) => {
             onClick={handleGoToGame}
             className="flex-1 bg-gradient-to-r from-purple-500 to-pink-500 text-white py-3 px-6 rounded-2xl font-bold shadow-lg hover:shadow-xl transition-all active:scale-95"
           >
-            看图选词
+            看词选图
           </button>
         </div>
       </div>

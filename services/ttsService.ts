@@ -1,37 +1,17 @@
 // DashScope TTS 配置
 const DASHSCOPE_API_KEY = import.meta.env.VITE_DASHSCOPE_API_KEY;
-
-// 根据环境选择不同的API调用方式
-const getApiEndpoint = (): string => {
-  if (import.meta.env.DEV) {
-    // 开发环境使用Vite代理
-    return '/api/dashscope/api/v1/services/aigc/multimodal-generation/generation';
-  } else {
-    // 生产环境检查是否在EdgeOne上
-    const hostname = typeof window !== 'undefined' ? window.location.hostname : '';
-    if (hostname.includes('edgeone.cool')) {
-      // EdgeOne环境使用边缘函数代理
-      return '/dashscope-tts';
-    } else {
-      // 其他生产环境直接调用DashScope（可能需要后端代理）
-      return 'https://dashscope.aliyuncs.com/api/v1/services/aigc/multimodal-generation/generation';
-    }
-  }
-};
-
-const API_ENDPOINT = getApiEndpoint();
+const DASHSCOPE_BASE_URL = import.meta.env.DEV
+  ? '/api/dashscope/api/v1'  // 开发环境使用代理
+  : 'https://dashscope.aliyuncs.com/api/v1'; // 生产环境直接调用
 
 // 音色配置
 const VOICE_CONFIG = {
   'zh-CN': 'Cherry', // 中文音色
-  'en-US': 'alloy'   // 英文音色 - 使用支持的语音
+  'en-US': 'Alex'    // 英文音色
 };
 
 // 使用 DashScope API 进行高质量语音合成
 export const speakText = async (text: string, lang: string = 'zh-CN', userInitiated: boolean = false): Promise<void> => {
-  // 在开始新的语音播放之前，先停止当前的所有音频播放
-  stopSpeaking();
-
   console.log('speakText called with:', { text, lang, hasApiKey: !!DASHSCOPE_API_KEY });
 
   if (!DASHSCOPE_API_KEY) {
@@ -50,29 +30,19 @@ export const speakText = async (text: string, lang: string = 'zh-CN', userInitia
     };
 
     console.log('DashScope TTS Request:', {
-      url: API_ENDPOINT,
+      url: `${DASHSCOPE_BASE_URL}/services/aigc/multimodal/generation`,
       body: requestBody,
-      hasApiKey: !!DASHSCOPE_API_KEY,
-      environment: import.meta.env.DEV ? 'development' : 'production'
+      hasApiKey: !!DASHSCOPE_API_KEY
     });
 
-    // 构建请求头
-    const headers: Record<string, string> = {
-      'Content-Type': 'application/json'
-    };
-
-    // 只在直接调用DashScope API时添加Authorization头
-    // EdgeOne边缘函数会从环境变量获取API密钥
-    const hostname = typeof window !== 'undefined' ? window.location.hostname : '';
-    if (!hostname.includes('edgeone.cool')) {
-      headers['Authorization'] = `Bearer ${DASHSCOPE_API_KEY}`;
-      headers['X-DashScope-SSE'] = 'disable';
-    }
-
-    // 调用API（可能是直接调用或通过代理）
-    const response = await fetch(API_ENDPOINT, {
+    // 使用正确的TTS endpoint
+    const response = await fetch(`${DASHSCOPE_BASE_URL}/services/aigc/multimodal-generation/generation`, {
       method: 'POST',
-      headers,
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${DASHSCOPE_API_KEY}`,
+        'X-DashScope-SSE': 'disable'
+      },
       body: JSON.stringify(requestBody)
     });
 
@@ -100,12 +70,9 @@ export const speakText = async (text: string, lang: string = 'zh-CN', userInitia
     }
 
     if (audioUrl) {
-      // 修复混合内容问题：将HTTP URL转换为HTTPS
-      const secureAudioUrl = audioUrl.replace(/^http:/, 'https:');
       console.log('Found audio URL:', audioUrl);
-      console.log('Using secure URL:', secureAudioUrl);
       // 创建音频元素并播放
-      const audio = new Audio(secureAudioUrl);
+      const audio = new Audio(audioUrl);
       audio.volume = 1.0;
 
       return new Promise((resolve, reject) => {
@@ -186,58 +153,43 @@ const fallbackToWebSpeech = (text: string, lang: string): void => {
   }
 };
 
+// 简单的语音播放函数，主要用于单词和短句
+export const speakSimpleText = async (text: string, lang: string = 'en-US'): Promise<void> => {
+  console.log('speakSimpleText called with:', { text, lang });
+
+  // 对于英文单词，直接使用Web Speech API，速度更快
+  if (lang === 'en-US' && 'speechSynthesis' in window) {
+    return new Promise((resolve) => {
+      const utterance = new SpeechSynthesisUtterance(text);
+      utterance.lang = lang;
+      utterance.rate = 0.8; // 稍慢一些，便于学习
+      utterance.pitch = 1.0;
+      utterance.volume = 1.0;
+
+      utterance.onend = () => resolve();
+      utterance.onerror = () => {
+        console.warn('Simple text speech synthesis failed');
+        resolve(); // 即使失败也resolve，避免阻塞
+      };
+
+      window.speechSynthesis.speak(utterance);
+    });
+  }
+
+  // 对于其他情况，使用完整的speakText函数
+  return speakText(text, lang, true);
+};
+
 // 停止当前播放的语音
 export const stopSpeaking = (): void => {
-  // 停止Web Speech API语音合成
   if ('speechSynthesis' in window) {
     window.speechSynthesis.cancel();
   }
-
   // 停止任何正在播放的音频元素
   const audioElements = document.querySelectorAll('audio');
   audioElements.forEach(audio => {
     audio.pause();
     audio.currentTime = 0;
   });
-
-  // 停止所有Web Audio上下文（如果有的话）
-  try {
-    if (window.AudioContext || (window as any).webkitAudioContext) {
-      // 注意：这里我们无法直接停止所有的AudioContext实例，
-      // 但可以尝试暂停所有媒体元素
-      const mediaElements = document.querySelectorAll('video, audio');
-      mediaElements.forEach(element => {
-        (element as HTMLMediaElement).pause();
-      });
-    }
-  } catch (error) {
-    // 忽略Web Audio API相关的错误
-  }
-};
-
-// 简单的浏览器语音合成（用于练习阶段）
-export const speakSimpleText = async (text: string, lang: string = 'en-US'): Promise<void> => {
-  // 检查浏览器是否支持语音合成
-  if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
-    return new Promise((resolve, reject) => {
-      // 停止之前的语音
-      stopSpeaking();
-
-      const utterance = new SpeechSynthesisUtterance(text);
-      utterance.lang = lang;
-      utterance.rate = 0.8; // 稍微慢一点，便于学习
-      utterance.pitch = 1.0;
-      utterance.volume = 1.0;
-
-      utterance.onend = () => resolve();
-      utterance.onerror = (error) => reject(error);
-
-      window.speechSynthesis.speak(utterance);
-    });
-  } else {
-    // 如果浏览器不支持语音合成，使用AI语音作为后备
-    console.log('浏览器不支持语音合成，使用AI语音');
-    return speakText(text, lang);
-  }
 };
 

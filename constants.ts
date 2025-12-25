@@ -17,6 +17,10 @@ export const WORDS_DATA: WordItem[] = [
   { id: 'w5', word: 'vase', type: 'n.', meaning: '花瓶', imageUrl: 'https://aband0n.oss-cn-nanjing.aliyuncs.com/img/image-20251225022923745.png' },
   // window - 窗户，建筑的重要组成部分
   { id: 'w6', word: 'window', type: 'n.', meaning: '窗户', imageUrl: 'https://aband0n.oss-cn-nanjing.aliyuncs.com/img/image-20251225023341322.png' },
+  // pencil - 铅笔，学习和写作的必备工具
+  { id: 'w7', word: 'pencil', type: 'n.', meaning: '铅笔', imageUrl: 'https://images.unsplash.com/photo-1554224155-8d04cb21cd6c?w=200&h=200&fit=crop&crop=center' },
+  // book - 书，知识的载体
+  { id: 'w8', word: 'book', type: 'n.', meaning: '书', imageUrl: 'https://images.unsplash.com/photo-1544947950-fa07a98d237f?w=200&h=200&fit=crop&crop=center' },
 ];
 
 export const SENTENCES_DATA: SentenceItem[] = [
@@ -29,9 +33,7 @@ export const SENTENCES_DATA: SentenceItem[] = [
 ];
 
 export const GRAMMAR_CARDS = [
-  { title: "", content: "This is a ...", desc: "介绍物品" },
-  { title: "", content: "Is this a ...?", sub: "Yes, it is.", desc: "问物品" },
-  { title: "", content: "Do you have a ...?", sub: "Yes, I do.", desc: "问拥有" },
+  { title: "", content: "Is it a/an...?", sub: "Yes, it is./No, it isn't.", desc: "问物品" },
 ];
 
 export const QUIZ_DATA: QuizItem[] = [

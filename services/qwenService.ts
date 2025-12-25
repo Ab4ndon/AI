@@ -1,5 +1,8 @@
 import { USER_NAME } from '../constants';
 
+// DashScope API Key
+const apiKey = import.meta.env.VITE_DASHSCOPE_API_KEY;
+
 // 计算文本相似度的辅助函数
 function calculateTextSimilarity(str1: string, str2: string): number {
   const s1 = str1.toLowerCase().trim();
@@ -41,13 +44,10 @@ const NETLIFY_FUNCTIONS_BASE = import.meta.env.DEV
   ? '/.netlify/functions'  // 开发环境
   : '/.netlify/functions'; // 生产环境
 
-// DashScope API Key
-const apiKey = import.meta.env.VITE_DASHSCOPE_API_KEY;
-
-// API 基础URL
+// DashScope API路径
 const BASE_URL = import.meta.env.DEV
-  ? '/api/dashscope/api/v1/services/aigc/text-generation/generation'  // 开发环境使用代理
-  : 'https://dashscope.aliyuncs.com/api/v1/services/aigc/text-generation/generation'; // 生产环境直接调用
+  ? '/api/dashscope/services/aigc/text-generation/generation'  // 开发环境使用代理
+  : 'https://dashscope.aliyuncs.com/services/aigc/text-generation/generation'; // 生产环境直接调用
 
 export const generateTeacherFeedback = async (
   context: string,
@@ -126,13 +126,11 @@ export const generateDetailedFeedback = async (
   expectedText: string,
   userTranscript: string,
   evaluationResult: any,
-  isWord: boolean,
-  retryCount: number = 0
+  isWord: boolean
 ): Promise<{
   message: string;
   score: number;
   suggestions: string[];
-  shouldPlayGuidance?: boolean; // 是否需要播放语音指导
 }> => {
   // 如果 evaluationResult 不存在，基于文本相似度计算评分
   let score = evaluationResult?.score;
@@ -182,16 +180,12 @@ export const generateDetailedFeedback = async (
 
   try {
     const modelId = 'qwen-turbo';
-    // 判断是否需要播放语音指导（每3次失败触发一次）
-    const shouldPlayGuidance = retryCount > 0 && retryCount % 3 === 0;
-
     const prompt = `
       你是一位友好的英语老师，正在指导一个7岁的小学生${USER_NAME}学习英语朗读。
       学生需要朗读的内容是："${expectedText}"
       学生的实际朗读是："${userTranscript}"
       测评得分：${score}分（满分100分）
       是否通过：${isCorrect ? '通过' : '需要改进'}
-      当前重试次数：${retryCount}次
 
       请根据得分和朗读内容给出个性化的评价和建议：
 
@@ -291,8 +285,7 @@ export const generateDetailedFeedback = async (
     return {
       message: message || (isCorrect ? `太棒了！得分：${score}分` : `再试试看！得分：${score}分`),
       score,
-      suggestions: suggestions.slice(0, 3), // 最多3条建议
-      shouldPlayGuidance // 是否需要播放语音指导
+      suggestions: suggestions.slice(0, 3) // 最多3条建议
     };
   } catch (error) {
     console.error("Qwen API Error:", error);

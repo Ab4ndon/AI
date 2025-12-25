@@ -35,8 +35,12 @@ const App: React.FC = () => {
       // 这里可以从 additionalData 中获取句子完成数量
       setSentencesCompleted(3); // 假设有3组句子
     } else if (viewId === AppView.TEXT) {
+      console.log('处理TEXT模块完成，additionalData:', additionalData);
       if (additionalData && additionalData.segmentResults) {
+        console.log('设置segmentResults:', additionalData.segmentResults.length, '个结果');
         setSegmentResults(additionalData.segmentResults);
+      } else {
+        console.log('没有收到segmentResults数据');
       }
       setTextCompleted(true);
       handleViewChange(AppView.TEXT_SUMMARY);
@@ -134,7 +138,7 @@ const App: React.FC = () => {
         return (
           <TextReading
             onBack={() => handleViewChange(AppView.HOME)}
-            onComplete={(mistakes) => handleModuleComplete(AppView.TEXT, mistakes)}
+            onComplete={(mistakes, additionalData) => handleModuleComplete(AppView.TEXT, mistakes, additionalData)}
           />
         );
       case AppView.TEXT_SUMMARY:

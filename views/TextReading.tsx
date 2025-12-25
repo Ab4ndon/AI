@@ -463,7 +463,6 @@ const TextReading: React.FC<Props> = ({ onBack, onComplete }) => {
             }
 
             // 练习后显示下一题按钮
-            await speakText("表现很好！准备进入下一段吧！", 'zh-CN');
             setTimeout(() => {
               setIsProcessing(false);
               if (currentSegIdx >= STORY_DATA.length - 1) {
@@ -499,7 +498,6 @@ const TextReading: React.FC<Props> = ({ onBack, onComplete }) => {
             }
 
             // 练习后显示下一题按钮
-            await speakText("表现很好！准备进入下一段吧！", 'zh-CN');
             setTimeout(() => {
               setIsProcessing(false);
               if (currentSegIdx >= STORY_DATA.length - 1) {
@@ -638,6 +636,9 @@ const TextReading: React.FC<Props> = ({ onBack, onComplete }) => {
 
   // 完成复习
   const finishReview = () => {
+    console.log('完成课文朗读，准备跳转到总结页面');
+    console.log('segmentResults 数据:', segmentResultsRef.current);
+    console.log('segmentResults 长度:', segmentResultsRef.current.length);
     onComplete([], { segmentResults: segmentResultsRef.current });
   };
 

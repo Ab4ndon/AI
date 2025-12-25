@@ -27,6 +27,9 @@ const TextReadingSummary: React.FC<Props> = ({
   onCloseShare,
   segmentResults = []
 }) => {
+  console.log('TextReadingSummary 接收到的 segmentResults:', segmentResults);
+  console.log('segmentResults 长度:', segmentResults.length);
+
   // 计算统计数据 - 基于唯一句子去重
   const uniqueSentences = new Map();
   segmentResults.forEach(item => {
@@ -39,6 +42,14 @@ const TextReadingSummary: React.FC<Props> = ({
 
   const totalSentences = uniqueSentenceScores.length;
   const averageScore = totalSentences > 0 ? uniqueSentenceScores.reduce((sum, item) => sum + item.score, 0) / totalSentences : 0;
+
+  console.log('计算得到的统计数据:', {
+    totalSentences,
+    averageScore,
+    excellentCount: uniqueSentenceScores.filter(item => item.score >= 80).length,
+    goodCount: uniqueSentenceScores.filter(item => item.score >= 60 && item.score < 80).length,
+    needsImprovementCount: uniqueSentenceScores.filter(item => item.score < 60).length
+  });
   const excellentCount = uniqueSentenceScores.filter(item => item.score >= 80).length;
   const goodCount = uniqueSentenceScores.filter(item => item.score >= 60 && item.score < 80).length;
   const needsImprovementCount = uniqueSentenceScores.filter(item => item.score < 60).length;

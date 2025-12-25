@@ -257,12 +257,6 @@ npm run build
 
 本项目采用 MIT 许可证 - 查看 [LICENSE](LICENSE) 文件了解详情
 
-## 📞 技术支持
-
-- 📧 邮箱: your-email@example.com
-- 🐛 问题反馈: [GitHub Issues](https://github.com/Ab4ndon/AI/issues)
-- 📖 文档: [项目Wiki](https://github.com/Ab4ndon/AI/wiki)
-
 ---
 
 **重要提醒**: 请确保妥善保管您的DashScope API Key，避免泄露导致不必要的费用损失。如有任何技术问题，请查看故障排除部分或提交Issue。

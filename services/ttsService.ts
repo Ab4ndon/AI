@@ -55,7 +55,10 @@ const VOICE_CONFIG = {
 
 // 使用 DashScope API 进行高质量语音合成
 export const speakText = async (text: string, lang: string = 'zh-CN', userInitiated: boolean = false): Promise<void> => {
+  console.log('=== SPEAKTEXT START ===');
   console.log('speakText called with:', { text, lang, hasApiKey: !!DASHSCOPE_API_KEY });
+  console.log('Current API_ENDPOINT:', API_ENDPOINT);
+  console.log('Environment:', { DEV: import.meta.env.DEV, MODE: import.meta.env.MODE });
 
   if (!DASHSCOPE_API_KEY) {
     console.warn('DashScope API Key not configured');

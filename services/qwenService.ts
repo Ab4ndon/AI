@@ -47,18 +47,11 @@ const NETLIFY_FUNCTIONS_BASE = import.meta.env.DEV
 // 根据环境选择不同的API调用方式
 const getApiEndpoint = (): string => {
   if (import.meta.env.DEV) {
-    // 开发环境使用Vite代理
+    // 开发环境使用Vite代理解决CORS问题
     return '/api/dashscope/services/aigc/text-generation/generation';
   } else {
-    // 生产环境检查是否在EdgeOne上
-    const hostname = typeof window !== 'undefined' ? window.location.hostname : '';
-    if (hostname.includes('edgeone.cool')) {
-      // EdgeOne环境使用边缘函数代理
-      return '/api/dashscope-tts';
-    } else {
-      // 其他生产环境直接调用DashScope（可能需要后端代理）
-      return 'https://dashscope.aliyuncs.com/services/aigc/text-generation/generation';
-    }
+    // 生产环境直接调用DashScope API
+    return 'https://dashscope.aliyuncs.com/api/v1/services/aigc/text-generation/generation';
   }
 };
 
@@ -94,10 +87,9 @@ export const generateTeacherFeedback = async (
         const headers: Record<string, string> = {
           'Content-Type': 'application/json'
         };
-        // 只在直接调用DashScope API时添加Authorization头
-        // EdgeOne边缘函数会从环境变量获取API密钥
-        const hostname = typeof window !== 'undefined' ? window.location.hostname : '';
-        if (!hostname.includes('edgeone.cool')) {
+        // 只在生产环境添加Authorization头（直接调用API时）
+        // 开发环境使用代理，代理会处理认证
+        if (!import.meta.env.DEV) {
           headers['Authorization'] = `Bearer ${apiKey}`;
           headers['X-DashScope-SSE'] = 'disable';
         }
@@ -240,10 +232,9 @@ export const generateDetailedFeedback = async (
         const headers: Record<string, string> = {
           'Content-Type': 'application/json'
         };
-        // 只在直接调用DashScope API时添加Authorization头
-        // EdgeOne边缘函数会从环境变量获取API密钥
-        const hostname = typeof window !== 'undefined' ? window.location.hostname : '';
-        if (!hostname.includes('edgeone.cool')) {
+        // 只在生产环境添加Authorization头（直接调用API时）
+        // 开发环境使用代理，代理会处理认证
+        if (!import.meta.env.DEV) {
           headers['Authorization'] = `Bearer ${apiKey}`;
           headers['X-DashScope-SSE'] = 'disable';
         }

@@ -89,9 +89,6 @@ const Home: React.FC<HomeProps> = ({ onChangeView, completedModules, returningFr
 
   // 初始化首页状态和语音
   useEffect(() => {
-    // 检查是否是第一次打开应用
-    const isFirstVisit = !localStorage.getItem('hasVisitedBefore');
-
     // 重置所有状态
     setGreeting(`${USER_NAME}，下课回来啦！Bella看到你完成了'秋季第一讲'的学习，真棒！让我们一起来巩固今天学的内容吧。我们从'单词巩固'开始！`);
     setShowSummary(false);
@@ -140,17 +137,14 @@ const Home: React.FC<HomeProps> = ({ onChangeView, completedModules, returningFr
         }
       }, 2000);
       timeouts.push(timeout3);
-    } else if (isFirstVisit) {
-      // 只有第一次打开应用时才播放欢迎语音
+    } else {
+      // 默认情况：首次进入首页或没有上下文，播放欢迎语音
       const timeout3 = setTimeout(() => {
         if (!userInteracted) { // 只在用户未交互时播放
           playVoiceWithFallback(`${USER_NAME}，下课回来啦！Bella看到你完成了'秋季第一讲'的学习，真棒！让我们一起来巩固今天学的内容吧。我们从'单词巩固'开始！`);
         }
       }, 500);
       timeouts.push(timeout3);
-
-      // 标记已经访问过
-      localStorage.setItem('hasVisitedBefore', 'true');
     }
 
     timeouts.push(timeout1, timeout2);

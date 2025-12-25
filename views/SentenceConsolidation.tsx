@@ -533,10 +533,13 @@ const SentenceConsolidation: React.FC<Props> = ({ onBack, onComplete }) => {
     const needsImprovementCount = uniqueSentenceScores.filter(item => item.score < 60).length;
 
     const handleContinuePractice = () => {
-      // 分析朗读结果，找出需要练习的句子（分数<80的）
-      const wrongSentences = sentenceResults
-        .filter(item => item.score < 80)
-        .map(item => item.sentence);
+      // 分析朗读结果，找出需要练习的句子（分数<80的）并去重
+      const wrongSentencesSet = new Set(
+        sentenceResults
+          .filter(item => item.score < 80)
+          .map(item => item.sentence)
+      );
+      const wrongSentences = Array.from(wrongSentencesSet);
 
       if (wrongSentences.length === 0) {
         // 如果没有错句，重新开始完整的朗读练习

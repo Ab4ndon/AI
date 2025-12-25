@@ -157,10 +157,32 @@ const WordConsolidation: React.FC<Props> = ({ onBack, onComplete }) => {
 
   // Phase 2: Reading Logic
   const handleRecordEnd = async (evaluationResult?: any, audioBlob?: Blob) => {
+    console.log('WordConsolidation - handleRecordEnd called:', { evaluationResult, hasAudioBlob: !!audioBlob });
+
     setIsProcessing(true);
 
     const currentWord = WORDS_DATA[currentIndex];
     const isSuccess = evaluationResult?.isCorrect ?? false;
+
+    // 如果没有识别结果，尝试使用默认文本
+    const userTranscript = evaluationResult?.userTranscript || currentWord.word;
+    console.log('WordConsolidation - transcript analysis:', {
+      expected: currentWord.word,
+      actual: userTranscript,
+      hasEvaluationResult: !!evaluationResult
+    });
+
+    // 如果evaluationResult为空，创建一个基本的评价结果
+    let safeEvaluationResult = evaluationResult;
+    if (!evaluationResult) {
+      console.warn('WordConsolidation - No evaluation result, creating fallback');
+      safeEvaluationResult = {
+        userTranscript: userTranscript,
+        isCorrect: userTranscript.toLowerCase().includes(currentWord.word.toLowerCase()),
+        confidence: 0.5,
+        similarity: 0.5
+      };
+    }
 
     // 保存录音
     if (audioBlob) {
@@ -174,8 +196,8 @@ const WordConsolidation: React.FC<Props> = ({ onBack, onComplete }) => {
     // 生成详细的AI评价和建议（这里会确保有正确的评分）
     const detailedFeedback = await generateDetailedFeedback(
       currentWord.word,
-      evaluationResult?.userTranscript || currentWord.word,
-      evaluationResult,
+      userTranscript,
+      safeEvaluationResult,
       true,
       newRetryCount
     );
@@ -451,7 +473,7 @@ const WordConsolidation: React.FC<Props> = ({ onBack, onComplete }) => {
           isProcessing={isProcessing}
           label="按住朗读"
           expectedText={word.word}
-          isWord={false} // 改为false以获得更长的等待时间，确保录音完整性
+          isWord={true} // 单词使用更短的等待时间，适合短文本识别
           showFeedback={true}
         />
 
@@ -547,16 +569,24 @@ const WordConsolidation: React.FC<Props> = ({ onBack, onComplete }) => {
           // 延迟后检查结果并决定下一步
           setTimeout(() => {
             if (stillWrongWords.length === 0) {
-              // 练习后全对
+              // 练习后全对，直接进入看词选图阶段
               setTimeout(async () => {
                 try {
                   await speakText("太棒了！现在所有单词的读音都掌握啦！我们去挑战看词选图吧！", 'zh-CN');
                   setTimeout(() => {
-                    onComplete(mistakes);
+                    // 直接进入QUIZ阶段，而不是回到首页
+                    setPhase(Phase.QUIZ);
+                    setCurrentIndex(0);
+                    prepareQuiz(0);
+                    setTeacherMsg("太棒了！现在让我们来玩看词选图游戏吧！");
                   }, 2000);
                 } catch (error) {
                   console.error('AI语音播放失败:', error);
-                  onComplete(mistakes);
+                  // 即使语音失败也要进入QUIZ阶段
+                  setPhase(Phase.QUIZ);
+                  setCurrentIndex(0);
+                  prepareQuiz(0);
+                  setTeacherMsg("太棒了！现在让我们来玩看词选图游戏吧！");
                 }
               }, 500);
             } else {
@@ -660,7 +690,7 @@ const WordConsolidation: React.FC<Props> = ({ onBack, onComplete }) => {
             isProcessing={isProcessing}
             label="按住跟读"
             expectedText={currentPracticeWord}
-            isWord={false} // 改为false以获得更长的等待时间，确保录音完整性
+            isWord={true} // 单词使用更短的等待时间，适合短文本识别
             showFeedback={true}
           />
         </div>
@@ -713,9 +743,13 @@ const WordConsolidation: React.FC<Props> = ({ onBack, onComplete }) => {
 
     const handleContinuePractice = () => {
       // 分析朗读结果，找出需要练习的单词（分数<80的）
-      const wrongWords = wordScores
-        .filter(item => item.score < 80)
-        .map(item => item.word);
+      // 获取错词并去重
+      const wrongWordsSet = new Set(
+        wordScores
+          .filter(item => item.score < 80)
+          .map(item => item.word)
+      );
+      const wrongWords = Array.from(wrongWordsSet);
 
       if (wrongWords.length === 0) {
         // 如果没有错词，重新开始完整的朗读练习
@@ -734,13 +768,13 @@ const WordConsolidation: React.FC<Props> = ({ onBack, onComplete }) => {
       }
     };
 
-    const handleGoToQuiz = () => {
-      // 进入看词选图游戏阶段
-      setPhase(Phase.QUIZ);
-      setCurrentIndex(0);
-      prepareQuiz(0);
-      setTeacherMsg("太棒了！现在让我们来玩看词选图游戏吧！");
-    };
+  const handleGoToQuiz = () => {
+    // 进入看词选图游戏阶段
+    setPhase(Phase.QUIZ);
+    setCurrentIndex(0);
+    prepareQuiz(0);
+    setTeacherMsg("太棒了！现在让我们来玩看词选图游戏吧！");
+  };
 
     return (
       <div className="flex flex-col flex-1 p-4 relative" onClick={handleUserInteraction}>
@@ -1017,6 +1051,7 @@ const WordConsolidation: React.FC<Props> = ({ onBack, onComplete }) => {
 
   const renderQuiz = () => {
     const word = WORDS_DATA[currentIndex];
+
     return (
       <div className="flex flex-col flex-1 p-4" onClick={handleUserInteraction}>
         <h3 className="text-center text-xl font-bold text-gray-900 mb-6">
@@ -1024,6 +1059,7 @@ const WordConsolidation: React.FC<Props> = ({ onBack, onComplete }) => {
         </h3>
         <div className="grid grid-cols-2 gap-4">
           {quizOptions.map(opt => {
+            console.log('renderQuiz: option', { word: opt.word, imageUrl: opt.imageUrl });
             const isSelected = selectedQuizId === opt.id;
             const isCorrect = opt.id === word.id;
             const isWrongSelection = isSelected && !isCorrect;

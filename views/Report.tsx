@@ -24,25 +24,33 @@ const Report: React.FC<Props> = ({ onRestart, onFinish, onShare, showSharePoster
   // 页面加载时播放恭喜语音
   useEffect(() => {
     let hasPlayed = false;
+    let isPlaying = false;
 
     const playCongrats = async () => {
-      if (hasPlayed) return; // 防止重复播放
-      hasPlayed = true;
+      if (hasPlayed || isPlaying) return; // 防止重复播放
+      isPlaying = true;
 
       try {
         await speakText(`恭喜你${USER_NAME}，完成了今天的所有学习任务！来看看你今天的优秀表现吧！`, 'zh-CN');
+        hasPlayed = true; // 只有成功播放后才标记为已播放
       } catch (error) {
         console.error('恭喜语音播放失败:', error);
+        isPlaying = false; // 失败后重置播放状态，允许重试
       }
     };
 
-    playCongrats();
+    // 使用setTimeout避免React严格模式下的重复调用
+    const timeoutId = setTimeout(() => {
+      playCongrats();
+    }, 100);
 
     // 返回cleanup函数
     return () => {
+      clearTimeout(timeoutId);
       hasPlayed = true;
+      isPlaying = false;
     };
-  }, []);
+  }, []); // 空依赖数组，确保只执行一次
 
   return (
     <div className="h-full flex flex-col bg-gradient-to-b from-blue-50 to-white overflow-y-auto relative">
@@ -63,7 +71,11 @@ const Report: React.FC<Props> = ({ onRestart, onFinish, onShare, showSharePoster
         <div className="bg-white rounded-3xl shadow-xl p-6 border-2 border-indigo-50 mb-6">
           <div className="text-center mb-6">
             <h2 className="text-2xl font-extrabold text-indigo-900">今日复习战报</h2>
-            <p className="text-gray-400 text-sm">Oct 24, 2023</p>
+            <p className="text-gray-400 text-sm">{new Date().toLocaleDateString('en-US', {
+              year: 'numeric',
+              month: 'short',
+              day: 'numeric'
+            })}</p>
           </div>
 
           <div className="grid grid-cols-2 gap-4 mb-6">

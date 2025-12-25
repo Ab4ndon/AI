@@ -1,8 +1,7 @@
 # EdgeOne Pages 配置文件
-# 这个文件告诉EdgeOne如何处理路由和函数
-# 允许所有跨域请求到边缘函数
+# 允许前端直接调用外部API（绕过CORS限制）
 
-/api/dashscope-tts/*
+/*
   Access-Control-Allow-Origin: *
-  Access-Control-Allow-Methods: POST, OPTIONS
-  Access-Control-Allow-Headers: Content-Type, Authorization
+  Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS
+  Access-Control-Allow-Headers: Content-Type, Authorization, X-DashScope-SSE

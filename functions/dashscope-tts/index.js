@@ -1,4 +1,5 @@
-// EdgeOne Pages Functions: DashScope TTS API Proxy
+// EdgeOne Pages Functions: Universal DashScope API Proxy
+// Handles TTS, text generation, and other DashScope API calls
 // Solves CORS issues when calling DashScope API from frontend
 
 export async function onRequest(context) {
@@ -56,8 +57,23 @@ export async function onRequest(context) {
     const requestBody = await request.json();
     console.log('EdgeOne function received request:', requestBody);
 
-    // Build DashScope API request
-    const dashscopeUrl = 'https://dashscope.aliyuncs.com/api/v1/services/aigc/multimodal-generation/generation';
+    // Determine API endpoint based on request content
+    let dashscopeUrl;
+
+    // Check if it's a TTS request (has input.text and input.voice)
+    if (requestBody.input && requestBody.input.text && requestBody.input.voice) {
+      dashscopeUrl = 'https://dashscope.aliyuncs.com/api/v1/services/aigc/multimodal-generation/generation';
+    }
+    // Check if it's a text generation request (has messages array)
+    else if (requestBody.messages && Array.isArray(requestBody.messages)) {
+      dashscopeUrl = 'https://dashscope.aliyuncs.com/api/v1/services/aigc/text-generation/generation';
+    }
+    // Default fallback
+    else {
+      dashscopeUrl = 'https://dashscope.aliyuncs.com/api/v1/services/aigc/text-generation/generation';
+    }
+
+    console.log('Using DashScope URL:', dashscopeUrl);
 
     const dashscopeResponse = await fetch(dashscopeUrl, {
       method: 'POST',

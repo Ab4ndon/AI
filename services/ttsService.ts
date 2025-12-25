@@ -2,7 +2,7 @@
 const DASHSCOPE_API_KEY = import.meta.env.VITE_DASHSCOPE_API_KEY;
 const DASHSCOPE_BASE_URL = import.meta.env.DEV
   ? '/api/dashscope/api/v1'  // 开发环境使用代理
-  : 'https://dashscope.aliyuncs.com/api/v1'; // 生产环境直接调用
+  : '/.netlify/functions/dashscope-tts'; // 生产环境使用EdgeOne函数代理
 
 // 音色配置
 const VOICE_CONFIG = {

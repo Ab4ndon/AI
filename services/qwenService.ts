@@ -47,7 +47,7 @@ const NETLIFY_FUNCTIONS_BASE = import.meta.env.DEV
 // DashScope API路径
 const BASE_URL = import.meta.env.DEV
   ? '/api/dashscope/services/aigc/text-generation/generation'  // 开发环境使用代理
-  : 'https://dashscope.aliyuncs.com/services/aigc/text-generation/generation'; // 生产环境直接调用
+  : '/.netlify/functions/dashscope-tts'; // 生产环境使用EdgeOne函数代理
 
 export const generateTeacherFeedback = async (
   context: string,

@@ -6,7 +6,7 @@ const DASHSCOPE_API_KEY = (import.meta as any).env?.VITE_DASHSCOPE_API_KEY;
 // @ts-ignore
 const DASHSCOPE_BASE_URL = (import.meta as any).env?.DEV
   ? '/api/dashscope/api/v1'  // 开发环境使用代理
-  : 'https://dashscope.aliyuncs.com/api/v1'; // 生产环境直接调用
+  : '/.netlify/functions/dashscope-tts'; // 生产环境使用EdgeOne函数代理
 
 export const testDashScopeConnection = async (): Promise<boolean> => {
   console.log('Testing DashScope TTS connection...');

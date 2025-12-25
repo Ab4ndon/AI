@@ -13,11 +13,5 @@
   "build": {
     "command": "npm run build",
     "outputDir": "dist"
-  },
-  "routes": [
-    {
-      "pattern": "/api/dashscope-tts",
-      "function": "dashscope-tts"
-    }
-  ]
+  }
 }
